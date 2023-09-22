@@ -107,15 +107,17 @@ resource "aws_instance" "splunk_ent" {
     ## Add Apps
       "sudo tar -zxvf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
       "sudo tar -zxvf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
-
-    ## Configure Apps
-      "sudo chmod +x/tmp/configure_splunk_deployment_server.sh",
-      "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
+      # "sudo /opt/splunk/bin/splunk reload deploy-server",
+      # "sudo /opt/splunk/bin/splunk restart",
 
     ## install NFR license
       "sudo mkdir /opt/splunk/etc/licenses/enterprise",
       "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
       "sudo /opt/splunk/bin/splunk restart",
+
+    ## Configure Apps
+      "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
+      "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
 
     ## Create Certs
       "sudo chmod +x /tmp/certs.sh",
