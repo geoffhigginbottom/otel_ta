@@ -39,10 +39,10 @@ resource "aws_instance" "apache_web" {
     destination = "/tmp/apache_web_agent_config.yaml"
   }
 
-  # provisioner "file" {
-  #   source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
-  #   destination = "/tmp/install_splunk_universal_forwarder.sh"
-  # }
+  provisioner "file" {
+    source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
+    destination = "/tmp/install_splunk_universal_forwarder.sh"
+  }
 
   provisioner "remote-exec" {
     inline = [
