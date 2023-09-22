@@ -137,4 +137,4 @@ echo "Updating Splunk config to use certs"
 
 # Restart Splunk
 echo "restarting Splunk"
-/opt/splunk/bin/splunk restart splunkd
+/opt/splunk/bin/splunk restart
