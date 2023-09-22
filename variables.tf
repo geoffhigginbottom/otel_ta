@@ -320,14 +320,6 @@ variable "region_wrapper_nodejs" {
 }
 
 
-### SOC Variables ###
-variable "soc_integration_id" {
-  default = {}
-}
-variable "soc_routing_key" {
-  default = {}
-}
-
 ### SignalFX Variables ###
 variable "access_token" {
   default = []
@@ -336,9 +328,6 @@ variable "api_url" {
   default = []
 }
 variable "realm" {
-  default = []
-}
-variable "notification_email" {
   default = []
 }
 variable "smart_agent_version" {
