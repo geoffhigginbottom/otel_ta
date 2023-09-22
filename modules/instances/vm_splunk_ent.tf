@@ -107,6 +107,7 @@ resource "aws_instance" "splunk_ent" {
     ## Add Apps
       "sudo tar -zxvf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
       "sudo tar -zxvf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
+      "sudo cp -R /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql",
       # "sudo /opt/splunk/bin/splunk reload deploy-server",
       # "sudo /opt/splunk/bin/splunk restart",
 
