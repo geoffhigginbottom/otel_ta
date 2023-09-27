@@ -45,8 +45,6 @@ module "instances" {
   ami                                   = data.aws_ami.latest-ubuntu.id
   gateway_count                         = var.gateway_count
   gateway_ids                           = var.gateway_ids
-  haproxy_count                         = var.haproxy_count
-  haproxy_ids                           = var.haproxy_ids
   mysql_count                           = var.mysql_count
   mysql_ids                             = var.mysql_ids
   mysql_user                             = var.ms_sql_user
@@ -84,9 +82,6 @@ module "instances" {
 ### Instances Outputs ###
 output "OTEL_Gateway_Servers" {
   value = var.instances_enabled ? module.instances.*.gateway_details : null
-}
-output "HAProxy_Servers" {
-  value = var.instances_enabled ? module.instances.*.haproxy_details : null
 }
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null

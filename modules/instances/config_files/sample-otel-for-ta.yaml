@@ -1,0 +1,95 @@
+config_sources:
+  # see https://github.com/signalfx/splunk-otel-collector/tree/main/internal/configsource/includeconfigsource#configuration
+  include/refreshable_credential:
+    watch_files: true
+  include/static:
+receivers:
+  hostmetrics:
+    collection_interval: 5s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      memory:
+      network:
+      # Paging/Swap space utilization and I/O metrics
+      paging:
+      # System load average metrics https://en.wikipedia.org/wiki/Load_(computing)
+      load:
+      # Aggregated system process count metrics
+      processes:
+      # System processes metrics, disabled by default
+      # process:
+  # Enables the otlp receiver with default settings
+  #  - grpc (default endpoint = 0.0.0.0:4317)
+  #  - http (default endpoint = 0.0.0.0:4318)
+  # Full configuration here: https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver/otlpreceiver
+  otlp:
+    protocols:
+      grpc:
+        endpoint: localhost:4317
+      http:
+        endpoint: localhost:4318
+  prometheus/internal:
+    config:
+      scrape_configs:
+      - job_name: 'otel-collector'
+        scrape_interval: 10s
+        static_configs:
+        - targets: ['0.0.0.0:8888']
+        metric_relabel_configs:
+          - source_labels: [ __name__ ]
+            regex: '.*grpc_io.*'
+            action: drop
+
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
+processors:
+  batch:
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 500
+  # Detect if the collector is running on a cloud system. Overrides resource attributes set by receivers.
+  # Detector order is important: the `system` detector goes last so it can't preclude cloud detectors from setting host/os info.
+  # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#ordering
+  resourcedetection/metrics:
+    detectors: [gcp, ecs, ec2, azure, system]
+    override: true
+  resourcedetection/traces:
+    detectors: [gcp, ecs, ec2, azure, system]
+    override: true
+  resource/telemetry:
+    attributes:
+      - action: insert
+        key: splunk.distribution
+        value: otel-ta
+
+exporters:
+  signalfx:
+    access_token: ${env:OBSERVABILITY_ACCESS_TOKEN}
+    realm:  ${env:OBSERVABILITY_REALM}
+  logging: # for TA debugging
+    loglevel: debug
+  sapm:
+    access_token: ${env:OBSERVABILITY_ACCESS_TOKEN}
+    endpoint: ${env:OBSERVABILITY_SAPM_ENDPOINT}
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [memory_limiter, batch, resourcedetection/metrics]
+      exporters: [signalfx]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection/traces]
+      exporters: [sapm]
+    metrics/telemetry:
+      receivers: [prometheus/internal]
+      processors: [memory_limiter, batch, resourcedetection/metrics, resource/telemetry]
+      exporters: [signalfx]

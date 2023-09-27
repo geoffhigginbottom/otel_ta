@@ -205,12 +205,6 @@ variable "gateway_count" {
 variable "gateway_ids" {
   default = []
 }
-variable "haproxy_count" {
-  default = {}
-}
-variable "haproxy_ids" {
-  default = []
-}
 variable "mysql_count" {
   default = {}
 }

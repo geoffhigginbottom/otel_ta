@@ -16,16 +16,6 @@ resource "aws_instance" "mysql" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
-    destination = "/tmp/update_splunk_otel_collector.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/config_files/mysql_agent_config.yaml"
-    destination = "/tmp/mysql_agent_config.yaml"
-  }
-
-  provisioner "file" {
     source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
     destination = "/tmp/install_splunk_universal_forwarder.sh"
   }
@@ -37,11 +27,6 @@ resource "aws_instance" "mysql" {
       "sudo apt-get update",
       "sudo apt-get upgrade -y",
 
-      "TOKEN=${var.access_token}",
-      "REALM=${var.realm}",
-      "HOSTNAME=${self.tags.Name}",
-      "LBURL=${aws_lb.gateway-lb.dns_name}",
-
     ## Install MySQL
       "sudo chmod +x /tmp/install_mysql.sh",
       "sudo /tmp/install_mysql.sh",
@@ -49,15 +34,6 @@ resource "aws_instance" "mysql" {
       "sudo mysql -u root -p'root' -e \"GRANT USAGE ON *.* TO '${var.mysql_user}'@'localhost';\"",
       "sudo mysql -u root -p'root' -e \"GRANT REPLICATION CLIENT ON *.* TO '${var.mysql_user}'@'localhost';\"",
     
-    ## Install Otel Agent
-      # "sudo curl -sSL https://dl.signalfx.com/splunk-otel-collector.sh > /tmp/splunk-otel-collector.sh",
-      # "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent --without-fluentd",
-      # "sudo chmod +x /tmp/update_splunk_otel_collector.sh",
-      # "sudo /tmp/update_splunk_otel_collector.sh $LBURL",
-      # "sudo mv /etc/otel/collector/agent_config.yaml /etc/otel/collector/agent_config.bak",
-      # "sudo mv /tmp/mysql_agent_config.yaml /etc/otel/collector/agent_config.yaml",
-      # "sudo systemctl restart splunk-otel-collector",
-
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
       "UNIVERSAL_FORWARDER_URL=${var.universalforwarder_url}",

@@ -44,14 +44,24 @@ resource "aws_instance" "splunk_ent" {
     destination = "/tmp/certs.sh"
   }
 
-    provisioner "file" {
-    source      = "${path.module}/config_files/splunkent_agent_config.yaml"
-    destination = "/tmp/splunkent_agent_config.yaml"
+  #   provisioner "file" {
+  #   source      = "${path.module}/config_files/splunkent_agent_config.yaml"
+  #   destination = "/tmp/splunkent_agent_config.yaml"
+  # }
+
+  # provisioner "file" {
+  #   source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
+  #   destination = "/tmp/update_splunk_otel_collector.sh"
+  # }
+
+  provisioner "file" {
+    source      = "${path.module}/config_files/mysql-otel-for-ta.yaml"
+    destination = "/tmp/mysql-otel-for-ta.yaml"
   }
 
   provisioner "file" {
-    source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
-    destination = "/tmp/update_splunk_otel_collector.sh"
+    source      = "${path.module}/config_files/apache-otel-for-ta.yaml"
+    destination = "/tmp/apache-otel-for-ta.yaml"
   }
 
   provisioner "file" {
@@ -105,11 +115,17 @@ resource "aws_instance" "splunk_ent" {
       "sudo /tmp/install_splunk_enterprise.sh $SPLUNK_PASSWORD $SPLUNK_ENT_VERSION $SPLUNK_FILENAME $LO_CONNECT_PASSWORD",
 
     ## Add Apps
-      "sudo tar -zxvf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
-      "sudo tar -zxvf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
-      "sudo cp -R /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql",
-      # "sudo /opt/splunk/bin/splunk reload deploy-server",
-      # "sudo /opt/splunk/bin/splunk restart",
+      "sudo tar -zxf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
+      "sudo tar -zxf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
+      "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/configs",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/configs",
+      "sudo cp /tmp/mysql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/configs/mysql-otel-for-ta.yaml",
+      "sudo cp /tmp/apache-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/configs/apache-otel-for-ta.yaml",
 
     ## install NFR license
       "sudo mkdir /opt/splunk/etc/licenses/enterprise",
@@ -119,6 +135,7 @@ resource "aws_instance" "splunk_ent" {
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
       "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
+      # "sudo cp /tmp/mysql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/configs/mysql-otel-for-ta.yaml",
 
     ## Create Certs
       "sudo chmod +x /tmp/certs.sh",

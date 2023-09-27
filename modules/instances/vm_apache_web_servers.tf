@@ -30,16 +30,6 @@ resource "aws_instance" "apache_web" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
-    destination = "/tmp/update_splunk_otel_collector.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/config_files/apache_web_agent_config.yaml"
-    destination = "/tmp/apache_web_agent_config.yaml"
-  }
-
-  provisioner "file" {
     source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
     destination = "/tmp/install_splunk_universal_forwarder.sh"
   }
@@ -55,24 +45,10 @@ resource "aws_instance" "apache_web" {
       "sudo echo 'type=83' | sudo sfdisk /dev/xvdg",
       "sudo mkfs.ext4 /dev/xvdg1",
       "sudo mount /dev/xvdg1 /media/data",
-
-      "TOKEN=${var.access_token}",
-      "REALM=${var.realm}",
-      "HOSTNAME=${self.tags.Name}",
-      "LBURL=${aws_lb.gateway-lb.dns_name}",
-   
+  
     ## Install Apache
       "sudo chmod +x /tmp/install_apache_web_server.sh",
       "sudo /tmp/install_apache_web_server.sh",
-
-    # ## Install Otel Agent
-    #   "sudo curl -sSL https://dl.signalfx.com/splunk-otel-collector.sh > /tmp/splunk-otel-collector.sh",
-    #   var.splunk_ent_count == "1" ? "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent --without-fluentd" : "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent",
-    #   "sudo chmod +x /tmp/update_splunk_otel_collector.sh",
-    #   "sudo /tmp/update_splunk_otel_collector.sh $LBURL",
-    #   "sudo mv /etc/otel/collector/agent_config.yaml /etc/otel/collector/agent_config.bak",
-    #   "sudo mv /tmp/apache_web_agent_config.yaml /etc/otel/collector/agent_config.yaml",
-    #   "sudo systemctl restart splunk-otel-collector",
 
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
