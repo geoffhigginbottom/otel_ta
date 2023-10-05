@@ -78,6 +78,15 @@ exporters:
     access_token: ${include/refreshable_credential:$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apache/local/access_token}
     endpoint: ${include/static:$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apache/local/sapm-endpoint}
 
+# exporters:
+#   signalfx:
+#     access_token: ${env:OBSERVABILITY_ACCESS_TOKEN}
+#     realm:  ${env:OBSERVABILITY_REALM}
+#   logging: # for TA debugging
+#     loglevel: debug
+#   sapm:
+#     access_token: ${env:OBSERVABILITY_ACCESS_TOKEN}
+#     endpoint: ${env:OBSERVABILITY_SAPM_ENDPOINT}
 
 service:
   extensions: [health_check, pprof, zpages]
