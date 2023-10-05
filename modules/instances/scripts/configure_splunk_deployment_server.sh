@@ -41,17 +41,17 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/inputs.c
 splunk_otel_config_location=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_mysql/configs/mysql-otel-for-ta.yaml
 disabled=false
 start_by_shell=false
-#access_token_secret_name=access_token
-#splunk_o11y_realm=$REALM
-#splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
+access_token_secret_name=access_token
+splunk_o11y_realm=$REALM
+splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
 
-#[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
-#_TCP_ROUTING = *
-#index = _internal
+[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
+_TCP_ROUTING = *
+index=_internal
 
-#[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
-#_TCP_ROUTING = *
-#index = _internal
+[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
+_TCP_ROUTING = *
+index=_internal
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/access_token
@@ -73,17 +73,17 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/inputs.
 splunk_otel_config_location=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apache/configs/apache-otel-for-ta.yaml
 disabled=false
 start_by_shell=false
-#access_token_secret_name=access_token
-#splunk_o11y_realm=$REALM
-#splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
+access_token_secret_name=access_token
+splunk_o11y_realm=$REALM
+splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
 
-#[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
-#_TCP_ROUTING = *
-#index = _internal
+[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
+_TCP_ROUTING = *
+index=_internal
 
-#[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
-#_TCP_ROUTING = *
-#index = _internal
+[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
+_TCP_ROUTING = *
+index=_internal
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/access_token
