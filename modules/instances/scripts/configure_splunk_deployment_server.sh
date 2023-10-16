@@ -52,6 +52,22 @@ index=_internal
 [monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
 _TCP_ROUTING = *
 index=_internal
+
+[monitor:///var/log/mysql/query.log]
+index = conftech-mysql
+sourcetype = mysql:generalQueryLog
+disabled = 0
+
+[monitor:///var/log/mysql/mysql-slow.log]
+index = conftech-mysql
+sourcetype = mysql:slowQueryLog
+disabled = 0
+
+[monitor:///var/log/mysql/error.log]
+index = conftech-mysql
+sourcetype = mysql:errorLog
+disabled = 0
+
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/access_token
@@ -84,6 +100,11 @@ index=_internal
 [monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
 _TCP_ROUTING = *
 index=_internal
+
+[monitor:///var/log/apache2]
+index=conftech-apache2
+sourcetype = access_combined
+disabled = 0
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/access_token
@@ -136,6 +157,16 @@ stateOnClient = enabled
 [serverClass:OTEL-Apache]
 machineTypesFilter = linux-x86_64
 whitelist.0 = *apache*
+
+[serverClass:UF:app:100_iae-us0_splunkcloud]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:UF]
+machineTypesFilter = linux-x86_64
+whitelist.0 = conftech*
+
 EOF
 
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf

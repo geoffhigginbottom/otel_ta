@@ -8,6 +8,8 @@ resource "aws_instance" "mysql" {
 
   tags = {
     Name = lower(join("-",[var.environment,element(var.mysql_ids, count.index)]))
+    splunkit_environment_type = "non-prd"
+    splunkit_data_classification = "public"
   }
 
   provisioner "file" {
@@ -16,8 +18,33 @@ resource "aws_instance" "mysql" {
   }
 
   provisioner "file" {
+    source      = "${path.module}/config_files/mysqld.cnf"
+    destination = "/tmp/mysqld.cnf"
+  }
+
+  provisioner "file" {
     source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
     destination = "/tmp/install_splunk_universal_forwarder.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/mysql_loadgen.py"
+    destination = "/tmp/mysql_loadgen.py"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/config_files/mysql_loadgen.service"
+    destination = "/tmp/mysql_loadgen.service"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/mysql_loadgen_start.sh"
+    destination = "/tmp/mysql_loadgen_start.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/mysql_loadgen_stop.sh"
+    destination = "/tmp/mysql_loadgen_stop.sh"
   }
 
   provisioner "remote-exec" {
@@ -34,6 +61,27 @@ resource "aws_instance" "mysql" {
       "sudo mysql -u root -p'root' -e \"GRANT USAGE ON *.* TO '${var.mysql_user}'@'localhost';\"",
       "sudo mysql -u root -p'root' -e \"GRANT REPLICATION CLIENT ON *.* TO '${var.mysql_user}'@'localhost';\"",
     
+    ## Setup LoadGen Tools
+      "sudo apt-get -y install python3-pip",
+      "sudo pip install mysql-connector",
+      "sudo pip install mysql-connector-python[cext]",
+      "mysql -u root -p'root' -e \"CREATE DATABASE loadgen;\"", # mysql -u root -p'root' -e "CREATE DATABASE loadgen;"
+      "mysql -u root -p'root' -e \"USE loadgen; CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) NOT NULL, email VARCHAR(100) NOT NULL);\"", # mysql -u root -p'root' -e "USE loadgen; CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) NOT NULL, email VARCHAR(100) NOT NULL);"
+      "mysql -u root -p'root' -e \"USE loadgen; INSERT INTO users (username, email) VALUES ('user1', 'user1@example.com'), ('user2', 'user2@example.com');\"", # mysql -u root -p'root' -e "USE loadgen; INSERT INTO users (username, email) VALUES ('user1', 'user1@example.com'), ('user2', 'user2@example.com');"
+      "mysql -u root -p'root' -e \"USE loadgen; GRANT INSERT, SELECT, CREATE, UPDATE, DELETE ON users TO '${var.mysql_user}'@'localhost';\"", # mysql -u root -p'root' -e "USE loadgen; GRANT INSERT, SELECT, CREATE, UPDATE, DELETE ON users TO 'signalfxagent'@'localhost';"
+      "sudo mv /tmp/mysql_loadgen.py /home/ubuntu/mysql_loadgen.py",
+      "sudo chmod +x /home/ubuntu/mysql_loadgen.py",
+      "sudo mv /tmp/mysql_loadgen_start.sh /home/ubuntu/mysql_loadgen_start.sh",
+      "sudo mv /tmp/mysql_loadgen_stop.sh /home/ubuntu/mysql_loadgen_stop.sh",
+      "sudo chmod +x /home/ubuntu/mysql_loadgen_start.sh",
+      "sudo chmod +x /home/ubuntu/mysql_loadgen_stop.sh",
+      "sudo mv /tmp/mysql_loadgen.service /etc/systemd/system/mysql_loadgen.service",
+      "sudo chmod +x /etc/systemd/system/mysql_loadgen.service",
+
+    ## Update MySql Logging 
+      "sudo cp /tmp/mysqld.cnf /etc/mysql/mysqld.conf.d/mysqld.cnf",
+      "sudo systemctl restart mysql",
+    
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
       "UNIVERSAL_FORWARDER_URL=${var.universalforwarder_url}",
@@ -49,6 +97,11 @@ resource "aws_instance" "mysql" {
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
       var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP" : "echo skipping",
+      "sudo /opt/splunkforwarder/bin/splunk cmd splunkd rest --noauth POST /servicesNS/nobody/Splunk_TA_otel_mysql/storage/passwords 'name=access_token&password=dAb_HPT5SSP243Af4lYikg'",
+
+    ## Run MySQL Loadgen Script
+      "sudo systemctl daemon-reload",
+      "sudo systemctl restart mysql_loadgen",
     ]
   }
 

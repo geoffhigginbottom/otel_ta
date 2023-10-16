@@ -1,35 +1,8 @@
 ## Enable/Disable Modules - Values are set in quantity.auto.tfvars ###
-variable "eks_cluster_enabled" {
-  default = []
-}
-variable "eks_fargate_cluster_enabled" {
-  default = []
-}
-variable "ecs_cluster_enabled" {
-  default = []
-}
+
 variable "instances_enabled" {
   default = []
 }
-variable "proxied_instances_enabled" {
-  default = []
-}
-variable "phone_shop_enabled" {
-  default = []
-}
-variable "lambda_sqs_dynamodb_enabled" {
-  default = []
-}
-variable "dashboards_enabled" {
-  default = []
-}
-variable "detectors_enabled" {
-  default = []
-}
-variable "itsi_o11y_cp_enabled" {
-  default = []
-}
-
 
 ### AWS Variables ###
 variable "profile" {
@@ -88,57 +61,6 @@ variable "windows_server_agent_url" {
   description = "Path to the agent file to be used for Windows Servers"
   default     = {}
 }
-variable "aws_api_gateway_deployment_retailorder_invoke_url" {
-  default = {}
-}
-
-## EKS Variables ##
-variable "eks_cluster_name" {
-  default = {}
-}
-
-## EKS-Fargate Variables ##
-variable "eks_fargate_cluster_name" {
-  default = {}
-}
-
-## AWS_ECS Variables ##
-variable "ecs_agent_url" {
-  description = "Path to the agent file to be used for ecs"
-  default     = {}
-}
-variable "ecs_app_port" {
-  description = "Port exposed by the docker image to redirect traffic to"
-  default     = 8080
-}
-variable "ecs_az_count" {
-  description = "Number of AZs to cover in a given region"
-  default     = "3"
-}
-variable "ecs_health_check_path" {
-  description = "Path used by ALB for Health Checks"
-  default     = "/"
-}
-variable "ecs_app_image" {
-  description = "Docker image to run in the ECS cluster"
-  default     = "jaegertracing/example-hotrod"
-}
-variable "ecs_container_name" {
-  description = "Name of the coantiner deployed in ECS"
-  default     = "hotrod"
-}
-variable "ecs_fargate_cpu" {
-  description = "Fargate instance CPU units to provision (1 vCPU = 1024 CPU units)"
-  default     = "1024"
-}
-variable "ecs_fargate_memory" {
-  description = "Fargate instance memory to provision (in MiB)"
-  default     = "2048"
-}
-variable "ecs_app_count" {
-  description = "Number of docker containers to run"
-  default     = 3
-}
 
 ## Ubuntu AMI ##
 data "aws_ami" "latest-ubuntu" {
@@ -194,9 +116,6 @@ data "aws_ami" "windows-server" {
     values = ["hvm"]
   }
 }
-
-
-
 
 ### Instance Count Variables ###
 variable "gateway_count" {
@@ -324,13 +243,7 @@ variable "api_url" {
 variable "realm" {
   default = []
 }
-variable "smart_agent_version" {
-  default = []
-}
 variable "environment" {
-  default = {}
-}
-variable "otelcol_version" {
   default = {}
 }
 variable "windows_msi_url" {
@@ -345,15 +258,7 @@ variable "windows_tdagent_conf_url" {
 variable "windows_eventlog_conf_url" {
   default = {}
 }
-variable "windows_proxied_server_agent_url" {
-  default = {}
-}
-variable "collector_version" {
-  default = {}
-}
-variable "detector_promoting_tags_id" {
-  default = {}
-}
+
 ### Splunk Enterprise Variables ###
 variable "splunk_ent_filename" {
   default = {}
@@ -380,6 +285,15 @@ variable "splunk_enterprise_ta_linux_filename" {
   default = {}
 }
 variable "splunk_ta_otel_filename" {
+  default = {}
+}
+variable "smart_agent_bundle_filename" {
+  default = {}
+}
+variable "config_explorer_filename" {
+  default = {}
+}
+variable "splunk_cloud_uf_filename" {
   default = {}
 }
 

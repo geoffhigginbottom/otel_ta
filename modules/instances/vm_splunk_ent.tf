@@ -27,6 +27,8 @@ resource "aws_instance" "splunk_ent" {
 
   tags = {
     Name = lower(join("-",[var.environment,element(var.splunk_ent_ids, count.index)]))
+    splunkit_environment_type = "non-prd"
+    splunkit_data_classification = "public"
   }
 
   provisioner "file" {
@@ -47,11 +49,6 @@ resource "aws_instance" "splunk_ent" {
   #   provisioner "file" {
   #   source      = "${path.module}/config_files/splunkent_agent_config.yaml"
   #   destination = "/tmp/splunkent_agent_config.yaml"
-  # }
-
-  # provisioner "file" {
-  #   source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
-  #   destination = "/tmp/update_splunk_otel_collector.sh"
   # }
 
   provisioner "file" {
@@ -79,6 +76,21 @@ resource "aws_instance" "splunk_ent" {
     destination = "/tmp/${var.splunk_ta_otel_filename}"
   }
 
+  provisioner "file" {
+    source      = join("/",[var.splunk_enterprise_files_local_path, var.smart_agent_bundle_filename])
+    destination = "/tmp/${var.smart_agent_bundle_filename}"
+  }
+
+  provisioner "file" {
+    source      = join("/",[var.splunk_enterprise_files_local_path, var.config_explorer_filename])
+    destination = "/tmp/${var.config_explorer_filename}"
+  }
+
+  provisioner "file" {
+    source      = join("/",[var.splunk_enterprise_files_local_path, var.splunk_cloud_uf_filename])
+    destination = "/tmp/${var.splunk_cloud_uf_filename}"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo sed -i 's/127.0.0.1.*/127.0.0.1 ${self.tags.Name}.local ${self.tags.Name} localhost/' /etc/hosts",
@@ -89,7 +101,6 @@ resource "aws_instance" "splunk_ent" {
       "TOKEN=${var.access_token}",
       "REALM=${var.realm}",
       "HOSTNAME=${self.tags.Name}",
-      "LBURL=${aws_lb.gateway-lb.dns_name}",
       
     ## Create Splunk Ent Vars
       "ENVIRONMENT=${var.environment}",
@@ -108,7 +119,7 @@ resource "aws_instance" "splunk_ent" {
       "echo $SPLUNK_ENT_VERSION > /tmp/splunk_ent_version",
       "echo $SPLUNK_FILENAME > /tmp/splunk_filename",
       "echo $SPLUNK_ENTERPRISE_LICENSE_FILE > /tmp/splunk_enterprise_license_filename",
-      "echo $LBURL > /tmp/lburl",
+      # "echo $LBURL > /tmp/lburl",
 
     ## Install Splunk
       "sudo chmod +x /tmp/install_splunk_enterprise.sh",
@@ -117,6 +128,9 @@ resource "aws_instance" "splunk_ent" {
     ## Add Apps
       "sudo tar -zxf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
       "sudo tar -zxf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
+      "sudo tar -zxf /tmp/${var.smart_agent_bundle_filename} --directory /opt/splunk/etc/deployment-apps/Splunk_TA_otel/linux_x86_64/bin",
+      "sudo tar -xvf /tmp/${var.splunk_cloud_uf_filename} -C /opt/splunk/etc/deployment-apps",
+      "sudo tar -xvf /tmp/${var.config_explorer_filename} -C /opt/splunk/etc/apps",
       "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local",
@@ -146,8 +160,6 @@ resource "aws_instance" "splunk_ent" {
     # ## Install Otel Agent
     #   "sudo curl -sSL https://dl.signalfx.com/splunk-otel-collector.sh > /tmp/splunk-otel-collector.sh",
     #   "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent",
-    #   "sudo chmod +x /tmp/update_splunk_otel_collector.sh",
-    #   "sudo /tmp/update_splunk_otel_collector.sh $LBURL",
     #   "sudo mv /etc/otel/collector/agent_config.yaml /etc/otel/collector/agent_config.bak",
     #   "sudo mv /tmp/splunkent_agent_config.yaml /etc/otel/collector/agent_config.yaml",
     #   "sudo systemctl restart splunk-otel-collector",
@@ -163,10 +175,10 @@ resource "aws_instance" "splunk_ent" {
   }
 }
 
-# resource "aws_eip_association" "eip_assoc" {
-#   instance_id   = aws_instance.splunk_ent[0].id
-#   public_ip = "13.36.136.240"
-# }
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = aws_instance.splunk_ent[0].id
+  public_ip     = "54.78.7.27"
+}
 
 output "splunk_ent_details" {
   value =  formatlist(
@@ -187,7 +199,6 @@ output "splunk_ent_urls" {
 
 output "splunk_password" {
   value = random_string.splunk_password.result
-  # value = var.splunk_password
 }
 
 output "lo_connect_password" {

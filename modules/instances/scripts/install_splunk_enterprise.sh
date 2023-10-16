@@ -38,6 +38,8 @@ curl -k -u admin:$PASSWORD https://localhost:8089/services/admin/roles \
 
 #Add K8S-Logs Index
 /opt/splunk/bin/splunk add index k8s-logs -auth admin:$PASSWORD
+# /opt/splunk/bin/splunk add index conftech-apache2 -auth admin:$PASSWORD
+# /opt/splunk/bin/splunk add index conftech-mysql -auth admin:$PASSWORD
 
 #Enable HEC
 /opt/splunk/bin/splunk http-event-collector enable -uri https://localhost:8089 -enable-ssl 0 -port 8088 -auth admin:$PASSWORD

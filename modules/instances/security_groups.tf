@@ -43,6 +43,14 @@ resource "aws_security_group" "instances_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ## Allow Locust 
+  ingress {
+    from_port   = 8089
+    to_port     = 8089
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   ## Allow Trace data direct to Gateway Nodes
   ingress {
     from_port   = 9411

@@ -22,6 +22,8 @@ resource "aws_instance" "apache_web" {
 
   tags = {
     Name = lower(join("-",[var.environment,element(var.apache_web_ids, count.index)]))
+    splunkit_environment_type = "non-prd"
+    splunkit_data_classification = "public"
   }
  
   provisioner "file" {
@@ -32,6 +34,16 @@ resource "aws_instance" "apache_web" {
   provisioner "file" {
     source      = "${path.module}/scripts/install_splunk_universal_forwarder.sh"
     destination = "/tmp/install_splunk_universal_forwarder.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/config_files/locust.service"
+    destination = "/tmp/locust.service"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/config_files/locustfile.py"
+    destination = "/tmp/locustfile.py"
   }
 
   provisioner "remote-exec" {
@@ -50,6 +62,9 @@ resource "aws_instance" "apache_web" {
       "sudo chmod +x /tmp/install_apache_web_server.sh",
       "sudo /tmp/install_apache_web_server.sh",
 
+    # Setup LoadGen Tools
+      "sudo apt-get -y install python3-pip",
+
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
       "UNIVERSAL_FORWARDER_URL=${var.universalforwarder_url}",
@@ -65,6 +80,16 @@ resource "aws_instance" "apache_web" {
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
       var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP" : "echo skipping",
+
+    ## Run Locust
+      "sudo apt-get -y install python3-pip",
+      "sudo pip3 install locust",
+      "sudo chmod +x /tmp/locustfile.py",
+      "sudo chmod +x /tmp/locust.service",
+      "sudo mv /tmp/locustfile.py /home/ubuntu/locustfile.py",
+      "sudo mv /tmp/locust.service /etc/systemd/system/locust.service",
+      "sudo systemctl daemon-reload",
+      "sudo systemctl restart locust",
     ]
   }
 

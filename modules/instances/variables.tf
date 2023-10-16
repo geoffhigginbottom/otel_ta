@@ -52,12 +52,6 @@ variable "api_url" {
 variable "realm" {
   default = []
 }
-variable "smart_agent_version" {
-  default = []
-}
-variable "otelcol_version" {
-  default = []
-}
 variable "ballast" {
   default = []
 }
@@ -68,12 +62,6 @@ variable "gateway_count" {
   default = {}
 }
 variable "gateway_ids" {
-  default = []
-}
-variable "haproxy_count" {
-  default = {}
-}
-variable "haproxy_ids" {
   default = []
 }
 variable "mysql_count" {
@@ -124,10 +112,6 @@ variable "apache_web_count" {
 variable "apache_web_ids" {
   default = []
 }
-variable "branch" {
-  default = []
-}
-
 
 ### Splunk Enterprise Variables ###
 variable "splunk_ent_count" {
@@ -161,6 +145,15 @@ variable "splunk_enterprise_ta_linux_filename" {
   default = {}
 }
 variable "splunk_ta_otel_filename" {
+  default = {}
+}
+variable "smart_agent_bundle_filename" {
+  default = {}
+}
+variable "config_explorer_filename" {
+  default = {}
+}
+variable "splunk_cloud_uf_filename" {
   default = {}
 }
 

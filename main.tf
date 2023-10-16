@@ -31,7 +31,6 @@ module "instances" {
   access_token                          = var.access_token
   api_url                               = var.api_url
   realm                                 = var.realm
-  smart_agent_version                   = var.smart_agent_version
   environment                           = var.environment
   region                                = lookup(var.aws_region, var.region)
   vpc_id                                = module.vpc.vpc_id
@@ -73,8 +72,11 @@ module "instances" {
   splunk_enterprise_license_filename    = var.splunk_enterprise_license_filename
   splunk_enterprise_ta_linux_filename   = var.splunk_enterprise_ta_linux_filename
   splunk_ta_otel_filename               = var.splunk_ta_otel_filename
+  smart_agent_bundle_filename           = var.smart_agent_bundle_filename
   splunk_ent_inst_type                  = var.splunk_ent_inst_type
   universalforwarder_filename           = var.universalforwarder_filename
+  splunk_cloud_uf_filename              = var.splunk_cloud_uf_filename
+  config_explorer_filename              = var.config_explorer_filename
   universalforwarder_url                = var.universalforwarder_url
 }
 
@@ -86,18 +88,18 @@ output "OTEL_Gateway_Servers" {
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null
 }
-output "MS_SQL_Servers" {
-  value = var.instances_enabled ? module.instances.*.ms_sql_details : null
-}
+# output "MS_SQL_Servers" {
+#   value = var.instances_enabled ? module.instances.*.ms_sql_details : null
+# }
 output "Apache_Web_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_details : null
 }
-output "collector_lb_dns" {
-  value = var.instances_enabled ? module.instances.*.gateway_lb_int_dns : null
-}
-output "Windows_Servers" {
-  value = var.instances_enabled ? module.instances.*.windows_server_details : null
-}
+# output "collector_lb_dns" {
+#   value = var.instances_enabled ? module.instances.*.gateway_lb_int_dns : null
+# }
+# output "Windows_Servers" {
+#   value = var.instances_enabled ? module.instances.*.windows_server_details : null
+# }
 
 ### Splunk Enterprise Outputs ###
 output "Splunk_Enterprise_Server" {
