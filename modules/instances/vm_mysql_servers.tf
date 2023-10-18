@@ -79,7 +79,7 @@ resource "aws_instance" "mysql" {
       "sudo chmod +x /etc/systemd/system/mysql_loadgen.service",
 
     ## Update MySql Logging 
-      "sudo cp /tmp/mysqld.cnf /etc/mysql/mysqld.conf.d/mysqld.cnf",
+      "sudo cp /tmp/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf",
       "sudo systemctl restart mysql",
     
     ## Generate Vars
