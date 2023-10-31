@@ -22,36 +22,31 @@ chown splunk:splunk /opt/splunk/etc/deployment-apps/Splunk_TA_nix/local/inputs.c
 ########## Setup Splunk_TA_nix ##########
 
 ########## Setup Splunk_TA_otel_base ##########
-rm /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/default/inputs.conf
-rm /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/configs/access_token
-rm /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/configs/realm
-rm /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/configs/sample-otel-for-ta.yaml
-rm /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/configs/sapm-endpoint
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/default/inputs.conf
+mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/local/
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled = true
-start_by_shell=false
 EOF
+
+#### HACK TO FIX MISSING 'README/inputs.conf.spec' - REMOVE WHEN FIXED ####
+mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/README
+mv /tmp/inputs.conf.spec /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base/README/inputs.conf.spec
+
 ########## Setup Splunk_TA_otel_base ##########
 
-########## Setup Splunk_TA_otel_mysql ##########
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/inputs.conf
+########## Setup Splunk_TA_otel_apps_mysql ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
-splunk_otel_config_location=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_mysql/configs/mysql-otel-for-ta.yaml
 disabled=false
 start_by_shell=false
-access_token_secret_name=access_token
-splunk_o11y_realm=$REALM
-splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
-
-[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
-_TCP_ROUTING = *
-index=_internal
-
-[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
-_TCP_ROUTING = *
-index=_internal
+interval = 30
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/local/access_token
+splunk_api_url=https://api.$REALM.signalfx.com
+splunk_ingest_url=https://ingest.$REALM.signalfx.com
+splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
+splunk_listen_interface=localhost
+splunk_realm=$REALM
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml
 
 [monitor:///var/log/mysql/query.log]
 index = conftech-mysql
@@ -67,39 +62,26 @@ disabled = 0
 index = conftech-mysql
 sourcetype = mysql:errorLog
 disabled = 0
-
 EOF
 
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/access_token
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/access_token
 $ACCESSTOKEN
 EOF
+########## Setup Splunk_TA_otel_apps_mysql ##########
 
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/realm
-$REALM
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_mysql/local/sapm-endpoint
-"https://ingest.$REALM.signalfx.com/v2/trace"
-EOF
-########## Setup Splunk_TA_otel_mysql ##########
-
-########## Setup Splunk_TA_otel_apache ##########
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/inputs.conf
+########## Setup Splunk_TA_otel_apps_apache ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
-splunk_otel_config_location=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apache/configs/apache-otel-for-ta.yaml
 disabled=false
 start_by_shell=false
-access_token_secret_name=access_token
-splunk_o11y_realm=$REALM
-splunk_o11y_sapm_endpoint=https://ingest.$REALM.signalfx.com/v2/trace
-
-[monitor://\$SPLUNK_HOME/var/log/splunk/otel.log]
-_TCP_ROUTING = *
-index=_internal
-
-[monitor://\$SPLUNK_HOME/var/log/splunk/Splunk_TA_otel.log]
-_TCP_ROUTING = *
-index=_internal
+interval = 30
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/local/access_token
+splunk_api_url=https://api.$REALM.signalfx.com
+splunk_ingest_url=https://ingest.$REALM.signalfx.com
+splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
+splunk_listen_interface=localhost
+splunk_realm=$REALM
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml
 
 [monitor:///var/log/apache2]
 index=conftech-apache2
@@ -107,18 +89,10 @@ sourcetype = access_combined
 disabled = 0
 EOF
 
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/access_token
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/access_token
 $ACCESSTOKEN
 EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/realm
-$REALM
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apache/local/sapm-endpoint
-"https://ingest.$REALM.signalfx.com/v2/trace"
-EOF
-########## Setup Splunk_TA_otel_apache ##########
+########## Setup Splunk_TA_otel_apps_apache ##########
 
 ########## Setup Serverclasses ##########
 cat << EOF > /opt/splunk/etc/system/local/serverclass.conf
@@ -140,7 +114,7 @@ stateOnClient = enabled
 machineTypesFilter = linux-x86_64
 whitelist.0 = $ENVIRONMENT*
 
-[serverClass:OTEL-MySql:app:Splunk_TA_otel_mysql]
+[serverClass:OTEL-MySql:app:Splunk_TA_otel_apps_mysql]
 restartSplunkWeb = 0
 restartSplunkd = 1
 stateOnClient = enabled
@@ -149,7 +123,7 @@ stateOnClient = enabled
 machineTypesFilter = linux-x86_64
 whitelist.0 = *mysql*
 
-[serverClass:OTEL-Apache:app:Splunk_TA_otel_apache]
+[serverClass:OTEL-Apache:app:Splunk_TA_otel_apps_apache]
 restartSplunkWeb = 0
 restartSplunkd = 1
 stateOnClient = enabled
@@ -172,4 +146,4 @@ EOF
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf
 ########## Setup Serverclasses ##########
 
-/opt/splunk/bin/splunk reload deploy-server
+/opt/splunk/bin/splunk reload deploy-server -auth admin:$PASSWORD
