@@ -97,7 +97,6 @@ resource "aws_instance" "mysql" {
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
       var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP" : "echo skipping",
-      "sudo /opt/splunkforwarder/bin/splunk cmd splunkd rest --noauth POST /servicesNS/nobody/Splunk_TA_otel_mysql/storage/passwords 'name=access_token&password=dAb_HPT5SSP243Af4lYikg'",
 
     ## Run MySQL Loadgen Script
       "sudo systemctl daemon-reload",
