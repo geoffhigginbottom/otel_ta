@@ -93,7 +93,7 @@ resource "aws_instance" "splunk_ent" {
 
   provisioner "remote-exec" {
     inline = [
-      "set -o errexit",
+      "set -o errexit", # added this to try and deal with issues with the deployment server reload and splunk restart steps
       "sudo sed -i 's/127.0.0.1.*/127.0.0.1 ${self.tags.Name}.local ${self.tags.Name} localhost/' /etc/hosts",
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo apt-get update",
@@ -141,15 +141,15 @@ resource "aws_instance" "splunk_ent" {
       "sudo cp /tmp/mysql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml",
       "sudo cp /tmp/apache-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml",
 
-    ## install NFR license
-      "sudo mkdir /opt/splunk/etc/licenses/enterprise",
-      "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
-      "sudo /opt/splunk/bin/splunk restart",
-
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
       "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
       # "sudo /opt/splunk/bin/splunk reload deploy-server -auth admin:$SPLUNK_PASSWORD",
+
+    ## install NFR license
+      "sudo mkdir /opt/splunk/etc/licenses/enterprise",
+      "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
+      "sudo /opt/splunk/bin/splunk restart",
 
     # ## Create Certs
     #   "sudo chmod +x /tmp/certs.sh",

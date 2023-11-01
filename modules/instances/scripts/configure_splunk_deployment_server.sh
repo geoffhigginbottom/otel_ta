@@ -146,4 +146,4 @@ EOF
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf
 ########## Setup Serverclasses ##########
 
-/opt/splunk/bin/splunk reload deploy-server -auth admin:$PASSWORD
+# /opt/splunk/bin/splunk reload deploy-server -auth admin:$PASSWORD
