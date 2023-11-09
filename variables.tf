@@ -50,16 +50,8 @@ variable "mysql_instance_type" {
 variable "ms_sql_instance_type" {
   default = []
 }
-variable "ms_sql_agent_url" {
-  description = "Path to the agent file to be used for MS SQL Servers"
-  default     = {}
-}
 variable "windows_server_instance_type" {
   default = []
-}
-variable "windows_server_agent_url" {
-  description = "Path to the agent file to be used for Windows Servers"
-  default     = {}
 }
 
 ## Ubuntu AMI ##
@@ -121,14 +113,11 @@ data "aws_ami" "windows-server" {
 variable "gateway_count" {
   default = {}
 }
-variable "gateway_ids" {
-  default = []
-}
 variable "mysql_count" {
   default = {}
 }
-variable "mysql_ids" {
-  default = []
+variable "mysql_count_gw" {
+  default = {}
 }
 variable "mysql_user" {
   default = []
@@ -138,9 +127,6 @@ variable "mysql_user_pwd" {
 }
 variable "ms_sql_count" {
   default = {}
-}
-variable "ms_sql_ids" {
-  default = []
 }
 variable "ms_sql_user" {
   default = []
@@ -154,31 +140,15 @@ variable "ms_sql_administrator_pwd" {
 variable "windows_server_count" {
   default = {}
 }
-variable "windows_server_ids" {
-  default = []
-}
 variable "windows_server_administrator_pwd" {
   default = []
 }
 variable "apache_web_count" {
   default = {}
 }
-variable "apache_web_ids" {
-  default = []
-}
 variable "splunk_ent_count" {
   default = {}
 }
-variable "splunk_ent_ids" {
-  default = []
-}
-# variable "xxx _count" {
-#   default = {}
-# }
-# variable "xxx _ids" {
-#   type = list(string)
-#   default = []
-# }
 
 variable "region" {
   description = "Select region (1:eu-west-1, 2:eu-west-3, 3:eu-central-1, 4:us-east-1, 5:us-east-2, 6:us-west-1, 7:us-west-2, 8:ap-southeast-1, 9:ap-southeast-2, 10:sa-east-1 )"
@@ -249,17 +219,14 @@ variable "environment" {
 variable "windows_msi_url" {
   default = {}
 }
-variable "windows_fluentd_url" {
-  default = {}
-}
-variable "windows_tdagent_conf_url" {
-  default = {}
-}
-variable "windows_eventlog_conf_url" {
-  default = {}
-}
 
 ### Splunk Enterprise Variables ###
+variable "splunk_admin_pwd" {
+  default = []
+}
+variable "splunk_private_ip" {
+  default = []
+}
 variable "splunk_ent_filename" {
   default = {}
 }
@@ -273,6 +240,12 @@ variable "universalforwarder_filename" {
   default = {}
 }
 variable "universalforwarder_url" {
+  default = {}
+}
+variable "windows_universalforwarder_filename" {
+  default = {}
+}
+variable "windows_universalforwarder_url" {
   default = {}
 }
 variable "splunk_enterprise_files_local_path" {

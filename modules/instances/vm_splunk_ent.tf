@@ -1,8 +1,8 @@
-resource "random_string" "splunk_password" {
-  length           = 12
-  special          = false
-  # override_special = "@£$"
-}
+# resource "random_string" "splunk_password" {
+#   length           = 12
+#   special          = false
+#   # override_special = "@£$"
+# }
 
 resource "random_string" "lo_connect_password" {
   length           = 12
@@ -14,8 +14,9 @@ resource "aws_instance" "splunk_ent" {
   count                     = var.splunk_ent_count
   ami                       = var.ami
   instance_type             = var.splunk_ent_inst_type
-  subnet_id                 = element(var.public_subnet_ids, count.index)
-    root_block_device {
+  subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
+  private_ip                = "172.32.2.10"
+  root_block_device {
     volume_size = 32
     volume_type = "gp2"
   }
@@ -26,7 +27,8 @@ resource "aws_instance" "splunk_ent" {
   ]
 
   tags = {
-    Name = lower(join("-",[var.environment,element(var.splunk_ent_ids, count.index)]))
+    Name = lower(join("_",[var.environment, "splunk-ent", count.index + 1]))
+    Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"
   }
@@ -59,6 +61,11 @@ resource "aws_instance" "splunk_ent" {
   provisioner "file" {
     source      = "${path.module}/config_files/apache-otel-for-ta.yaml"
     destination = "/tmp/apache-otel-for-ta.yaml"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/config_files/ms-sql-otel-for-ta.yaml"
+    destination = "/tmp/ms-sql-otel-for-ta.yaml"
   }
 
   provisioner "file" {
@@ -105,7 +112,8 @@ resource "aws_instance" "splunk_ent" {
       
     ## Create Splunk Ent Vars
       "ENVIRONMENT=${var.environment}",
-      "SPLUNK_PASSWORD=${random_string.splunk_password.result}",
+      # "SPLUNK_PASSWORD=${random_string.splunk_password.result}",
+      "SPLUNK_PASSWORD=${var.splunk_admin_pwd}",
       "LO_CONNECT_PASSWORD=${random_string.lo_connect_password.result}",
       "SPLUNK_ENT_VERSION=${var.splunk_ent_version}",
       "SPLUNK_FILENAME=${var.splunk_ent_filename}",
@@ -113,7 +121,7 @@ resource "aws_instance" "splunk_ent" {
       
     ## Write env vars to file (used for debugging)
       "echo $TOKEN > /tmp/access_token",
-      "echo REALM > /tmp/realm",
+      "echo $REALM > /tmp/realm",
       "echo $ENVIRONMENT > /tmp/environment",
       "echo $SPLUNK_PASSWORD > /tmp/splunk_password",
       "echo $LO_CONNECT_PASSWORD > /tmp/lo_connect_password",
@@ -131,20 +139,30 @@ resource "aws_instance" "splunk_ent" {
       "sudo tar -zxf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
       "sudo tar -xvf /tmp/${var.splunk_cloud_uf_filename} -C /opt/splunk/etc/deployment-apps",
       "sudo tar -xvf /tmp/${var.config_explorer_filename} -C /opt/splunk/etc/apps",
-      "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base",
+      "sudo cp -r /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows",
+      "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux",
+      "sudo rm -fr /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/linux_x86_64",
+      "sudo rm -fr /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/windows_x86_64",
+
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs",
+
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs",
+
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs",
+
       "sudo cp /tmp/mysql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml",
       "sudo cp /tmp/apache-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml",
+      "sudo cp /tmp/ms-sql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs/ms-sql-otel-for-ta.yaml",
 
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
       "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
-      # "sudo /opt/splunk/bin/splunk reload deploy-server -auth admin:$SPLUNK_PASSWORD",
 
     ## install NFR license
       "sudo mkdir /opt/splunk/etc/licenses/enterprise",
@@ -175,30 +193,30 @@ resource "aws_instance" "splunk_ent" {
   }
 }
 
-resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.splunk_ent[0].id
-  public_ip     = "54.78.7.27"
-}
+# resource "aws_eip_association" "eip_assoc" {
+#   instance_id   = aws_instance.splunk_ent[0].id
+#   public_ip     = "54.78.7.27"
+# }
 
-output "splunk_ent_details" {
-  value =  formatlist(
-    "%s, %s", 
-    aws_instance.splunk_ent.*.tags.Name,
-    aws_instance.splunk_ent.*.public_ip,
-  )
-}
+# output "splunk_ent_details" {
+#   value =  formatlist(
+#     "%s, %s", 
+#     aws_instance.splunk_ent.*.tags.Name,
+#     aws_instance.splunk_ent.*.public_ip,
+#   )
+# }
 
-output "splunk_ent_urls" {
-  value =  formatlist(
-    "%s%s:%s", 
-    "http://",
-    aws_instance.splunk_ent.*.public_ip,
-    "8000",
-  )
-}
+# output "splunk_ent_urls" {
+#   value =  formatlist(
+#     "%s%s:%s", 
+#     "http://",
+#     aws_instance.splunk_ent.*.public_ip,
+#     "8000",
+#   )
+# }
 
 output "splunk_password" {
-  value = random_string.splunk_password.result
+  value = var.splunk_admin_pwd
 }
 
 output "lo_connect_password" {

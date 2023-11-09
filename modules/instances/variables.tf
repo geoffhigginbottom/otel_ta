@@ -61,14 +61,11 @@ variable "environment" {
 variable "gateway_count" {
   default = {}
 }
-variable "gateway_ids" {
-  default = []
-}
 variable "mysql_count" {
   default = {}
 }
-variable "mysql_ids" {
-  default = []
+variable "mysql_count_gw" {
+  default = {}
 }
 variable "mysql_user" {
   default = []
@@ -79,16 +76,10 @@ variable "mysql_user_pwd" {
 variable "ms_sql_count" {
   default = {}
 }
-variable "ms_sql_ids" {
-  default = []
-}
 variable "ms_sql_user" {
   default = []
 }
 variable "ms_sql_user_pwd" {
-  default = []
-}
-variable "ms_sql_agent_url" {
   default = []
 }
 variable "ms_sql_administrator_pwd" {
@@ -97,28 +88,22 @@ variable "ms_sql_administrator_pwd" {
 variable "windows_server_count" {
   default = {}
 }
-variable "windows_server_ids" {
-  default = []
-}
-variable "windows_server_agent_url" {
-  default = []
-}
 variable "windows_server_administrator_pwd" {
   default =[]
 }
 variable "apache_web_count" {
   default = {}
 }
-variable "apache_web_ids" {
-  default = []
-}
 
 ### Splunk Enterprise Variables ###
+variable "splunk_admin_pwd" {
+  default = []
+}
+variable "splunk_private_ip" {
+  default = []
+}
 variable "splunk_ent_count" {
   default = {}
-}
-variable "splunk_ent_ids" {
-  default = []
 }
 variable "splunk_ent_version" {
   default = {}
@@ -133,6 +118,12 @@ variable "universalforwarder_filename" {
   default = {}
 }
 variable "universalforwarder_url" {
+  default = {}
+}
+variable "windows_universalforwarder_filename" {
+  default = {}
+}
+variable "windows_universalforwarder_url" {
   default = {}
 }
 variable "splunk_enterprise_files_local_path" {

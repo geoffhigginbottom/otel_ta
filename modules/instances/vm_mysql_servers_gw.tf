@@ -1,13 +1,15 @@
-resource "aws_instance" "mysql" {
-  count                     = var.mysql_count
+resource "aws_instance" "mysql_gw" {
+  count                     = var.mysql_count_gw
   ami                       = var.ami
   instance_type             = var.mysql_instance_type
+  # subnet_id                 = element(var.public_subnet_ids, count.index)
   subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
   key_name                  = var.key_name
   vpc_security_group_ids    = [aws_security_group.instances_sg.id]
 
   tags = {
-    Name = lower(join("_",[var.environment, "mysql", count.index + 1]))
+    # Name = lower(join("-",[var.environment,element(var.mysql_ids, count.index)]))
+    Name = lower(join("_",[var.environment, "mysql_gw", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"
@@ -17,6 +19,11 @@ resource "aws_instance" "mysql" {
     source      = "${path.module}/scripts/install_mysql.sh"
     destination = "/tmp/install_mysql.sh"
   }
+
+  # provisioner "file" {
+  #   source      = "${path.module}/scripts/update_splunk_otel_collector.sh"
+  #   destination = "/tmp/update_splunk_otel_collector.sh"
+  # }
 
   provisioner "file" {
     source      = "${path.module}/config_files/mysqld.cnf"
@@ -89,6 +96,8 @@ resource "aws_instance" "mysql" {
       # "PASSWORD=${random_string.apache_universalforwarder_password.result}",
       "PASSWORD=${var.splunk_admin_pwd}",
       var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      # var.splunk_ent_count == "1" ? "SPLUNK_IP=${var.splunk_private_ip}" : "echo skipping",
+      
 
     ## Write env vars to file (used for debugging)
       "echo $UNIVERSAL_FORWARDER_FILENAME > /tmp/UNIVERSAL_FORWARDER_FILENAME",
@@ -115,10 +124,10 @@ resource "aws_instance" "mysql" {
   }
 }
 
-output "mysql_details" {
+output "mysql_gw_details" {
   value =  formatlist(
     "%s, %s", 
-    aws_instance.mysql.*.tags.Name,
-    aws_instance.mysql.*.public_ip,
+    aws_instance.mysql_gw.*.tags.Name,
+    aws_instance.mysql_gw.*.public_ip,
   )
 }

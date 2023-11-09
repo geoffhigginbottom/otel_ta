@@ -43,29 +43,24 @@ module "instances" {
   gateway_instance_type                 = var.gateway_instance_type
   ami                                   = data.aws_ami.latest-ubuntu.id
   gateway_count                         = var.gateway_count
-  gateway_ids                           = var.gateway_ids
   mysql_count                           = var.mysql_count
-  mysql_ids                             = var.mysql_ids
+  mysql_count_gw                        = var.mysql_count_gw
   mysql_user                             = var.ms_sql_user
   mysql_user_pwd                        = var.ms_sql_user_pwd
   ms_sql_count                          = var.ms_sql_count
-  ms_sql_ids                            = var.ms_sql_ids
   ms_sql_user                           = var.ms_sql_user
   ms_sql_user_pwd                       = var.ms_sql_user_pwd
   ms_sql_administrator_pwd              = var.ms_sql_administrator_pwd
-  ms_sql_agent_url                      = var.ms_sql_agent_url
   ms_sql_instance_type                  = var.ms_sql_instance_type
   ms_sql_ami                            = data.aws_ami.ms-sql-server.id
   windows_server_count                  = var.windows_server_count
-  windows_server_ids                    = var.windows_server_ids
-  windows_server_agent_url              = var.windows_server_agent_url
   windows_server_administrator_pwd      = var.windows_server_administrator_pwd
   windows_server_instance_type          = var.windows_server_instance_type
   windows_server_ami                    = data.aws_ami.windows-server.id
   apache_web_count                      = var.apache_web_count
-  apache_web_ids                        = var.apache_web_ids
+  splunk_admin_pwd                      = var.splunk_admin_pwd
+  splunk_private_ip                     = var.splunk_private_ip
   splunk_ent_count                      = var.splunk_ent_count
-  splunk_ent_ids                        = var.splunk_ent_ids
   splunk_ent_version                    = var.splunk_ent_version
   splunk_ent_filename                   = var.splunk_ent_filename
   splunk_enterprise_files_local_path    = var.splunk_enterprise_files_local_path
@@ -74,23 +69,26 @@ module "instances" {
   splunk_ta_otel_filename               = var.splunk_ta_otel_filename
   smart_agent_bundle_filename           = var.smart_agent_bundle_filename
   splunk_ent_inst_type                  = var.splunk_ent_inst_type
-  universalforwarder_filename           = var.universalforwarder_filename
   splunk_cloud_uf_filename              = var.splunk_cloud_uf_filename
   config_explorer_filename              = var.config_explorer_filename
+  universalforwarder_filename           = var.universalforwarder_filename
   universalforwarder_url                = var.universalforwarder_url
+  windows_universalforwarder_filename   = var.windows_universalforwarder_filename
+  windows_universalforwarder_url        = var.windows_universalforwarder_url
+  
 }
 
 
 ### Instances Outputs ###
-output "OTEL_Gateway_Servers" {
-  value = var.instances_enabled ? module.instances.*.gateway_details : null
-}
+# output "OTEL_Gateway_Servers" {
+#   value = var.instances_enabled ? module.instances.*.gateway_details : null
+# }
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null
 }
-# output "MS_SQL_Servers" {
-#   value = var.instances_enabled ? module.instances.*.ms_sql_details : null
-# }
+output "MS_SQL_Servers" {
+  value = var.instances_enabled ? module.instances.*.ms_sql_details : null
+}
 output "Apache_Web_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_details : null
 }
