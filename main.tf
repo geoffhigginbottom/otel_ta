@@ -17,12 +17,14 @@ provider "helm" {
 }
 
 module "vpc" {
-  source         = "./modules/vpc"
-  vpc_name       = var.environment
-  vpc_cidr_block = var.vpc_cidr_block
-  subnet_count   = var.subnet_count
-  region         = lookup(var.aws_region, var.region)
-  environment    = var.environment
+  source                = "./modules/vpc"
+  vpc_name              = var.environment
+  vpc_cidr_block        = var.vpc_cidr_block
+  subnet_count          = var.subnet_count
+  region                = lookup(var.aws_region, var.region)
+  environment           = var.environment
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
 }
 
 module "instances" {
@@ -75,7 +77,7 @@ module "instances" {
   universalforwarder_url                = var.universalforwarder_url
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename
   windows_universalforwarder_url        = var.windows_universalforwarder_url
-  
+  my_public_ip                          = var.my_public_ip
 }
 
 

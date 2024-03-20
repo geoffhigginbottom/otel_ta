@@ -53,6 +53,9 @@ variable "ms_sql_instance_type" {
 variable "windows_server_instance_type" {
   default = []
 }
+variable "my_public_ip" {
+  default = []
+}
 
 ## Ubuntu AMI ##
 data "aws_ami" "latest-ubuntu" {

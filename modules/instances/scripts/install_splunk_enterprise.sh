@@ -36,16 +36,16 @@ curl -k -u admin:$PASSWORD https://localhost:8089/services/admin/roles \
 #Add LOC User
 /opt/splunk/bin/splunk add user LO-Connect -role lo_connect -password $LO_CONNECT_PASSWORD -auth admin:$PASSWORD
 
-#Add K8S-Logs Index
-/opt/splunk/bin/splunk add index k8s-logs -auth admin:$PASSWORD
-# /opt/splunk/bin/splunk add index conftech-apache2 -auth admin:$PASSWORD
-# /opt/splunk/bin/splunk add index conftech-mysql -auth admin:$PASSWORD
+#Add Indexs
+# /opt/splunk/bin/splunk add index k8s-logs -auth admin:$PASSWORD
+/opt/splunk/bin/splunk add index apache2 -auth admin:$PASSWORD
+/opt/splunk/bin/splunk add index mysql -auth admin:$PASSWORD
 
 #Enable HEC
 /opt/splunk/bin/splunk http-event-collector enable -uri https://localhost:8089 -enable-ssl 0 -port 8088 -auth admin:$PASSWORD
 
 #Create HEC Tokens
-/opt/splunk/bin/splunk http-event-collector create OTEL-K8S -uri https://localhost:8089 -description "Used by OTEL K8S" -disabled 0 -index k8s-logs -indexes k8s-logs -auth admin:$PASSWORD
+# /opt/splunk/bin/splunk http-event-collector create OTEL-K8S -uri https://localhost:8089 -description "Used by OTEL K8S" -disabled 0 -index k8s-logs -indexes k8s-logs -auth admin:$PASSWORD
 /opt/splunk/bin/splunk http-event-collector create OTEL -uri https://localhost:8089 -description "Used by OTEL" -disabled 0 -index main -indexes main -auth admin:$PASSWORD
 
 #Create /etc/systemd/system/Splunkd.service

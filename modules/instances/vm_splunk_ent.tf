@@ -1,3 +1,4 @@
+## Replaced with a static password set in terraform.tfvars - easier for testing when re-deploying
 # resource "random_string" "splunk_password" {
 #   length           = 12
 #   special          = false
@@ -7,7 +8,6 @@
 resource "random_string" "lo_connect_password" {
   length           = 12
   special          = false
-  # override_special = "@£$"
 }
 
 resource "aws_instance" "splunk_ent" {
@@ -22,7 +22,6 @@ resource "aws_instance" "splunk_ent" {
   }
   key_name                  = var.key_name
   vpc_security_group_ids    = [
-    aws_security_group.instances_sg.id,
     aws_security_group.splunk_ent_sg.id,
   ]
 
@@ -47,11 +46,6 @@ resource "aws_instance" "splunk_ent" {
     source      = "${path.module}/scripts/certs.sh"
     destination = "/tmp/certs.sh"
   }
-
-  #   provisioner "file" {
-  #   source      = "${path.module}/config_files/splunkent_agent_config.yaml"
-  #   destination = "/tmp/splunkent_agent_config.yaml"
-  # }
 
   provisioner "file" {
     source      = "${path.module}/config_files/mysql-otel-for-ta.yaml"
@@ -93,10 +87,11 @@ resource "aws_instance" "splunk_ent" {
     destination = "/tmp/${var.config_explorer_filename}"
   }
 
-  provisioner "file" {
-    source      = join("/",[var.splunk_enterprise_files_local_path, var.splunk_cloud_uf_filename])
-    destination = "/tmp/${var.splunk_cloud_uf_filename}"
-  }
+  ## disabled to enable logs to be sent direct to deployment server indexer instead of this cloud instance
+  # provisioner "file" {
+  #   source      = join("/",[var.splunk_enterprise_files_local_path, var.splunk_cloud_uf_filename])
+  #   destination = "/tmp/${var.splunk_cloud_uf_filename}"
+  # }
 
   provisioner "remote-exec" {
     inline = [
@@ -137,7 +132,7 @@ resource "aws_instance" "splunk_ent" {
     ## Add Apps
       "sudo tar -zxf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
       "sudo tar -zxf /tmp/${var.splunk_ta_otel_filename} --directory /opt/splunk/etc/deployment-apps",
-      "sudo tar -xvf /tmp/${var.splunk_cloud_uf_filename} -C /opt/splunk/etc/deployment-apps",
+      # "sudo tar -xvf /tmp/${var.splunk_cloud_uf_filename} -C /opt/splunk/etc/deployment-apps", # disabled to enable logs to be sent direct to deployment server indexer instead of the cloud instance
       "sudo tar -xvf /tmp/${var.config_explorer_filename} -C /opt/splunk/etc/apps",
       "sudo cp -r /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows",
       "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux",
@@ -169,18 +164,11 @@ resource "aws_instance" "splunk_ent" {
       "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
       "sudo /opt/splunk/bin/splunk restart",
 
-    # ## Create Certs
-    #   "sudo chmod +x /tmp/certs.sh",
-    #   "sudo /tmp/certs.sh",
-    #   "sudo cp /opt/splunk/etc/auth/sloccerts/mySplunkWebCert.pem /tmp/mySplunkWebCert.pem",
-    #   "sudo chown ubuntu:ubuntu /tmp/mySplunkWebCert.pem",
-
-    # ## Install Otel Agent
-    #   "sudo curl -sSL https://dl.signalfx.com/splunk-otel-collector.sh > /tmp/splunk-otel-collector.sh",
-    #   "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent",
-    #   "sudo mv /etc/otel/collector/agent_config.yaml /etc/otel/collector/agent_config.bak",
-    #   "sudo mv /tmp/splunkent_agent_config.yaml /etc/otel/collector/agent_config.yaml",
-    #   "sudo systemctl restart splunk-otel-collector",
+    ## Create Certs
+      "sudo chmod +x /tmp/certs.sh",
+      "sudo /tmp/certs.sh",
+      "sudo cp /opt/splunk/etc/auth/sloccerts/mySplunkWebCert.pem /tmp/mySplunkWebCert.pem",
+      "sudo chown ubuntu:ubuntu /tmp/mySplunkWebCert.pem",
     ]
   }
 
@@ -192,28 +180,6 @@ resource "aws_instance" "splunk_ent" {
     agent = "true"
   }
 }
-
-# resource "aws_eip_association" "eip_assoc" {
-#   instance_id   = aws_instance.splunk_ent[0].id
-#   public_ip     = "54.78.7.27"
-# }
-
-# output "splunk_ent_details" {
-#   value =  formatlist(
-#     "%s, %s", 
-#     aws_instance.splunk_ent.*.tags.Name,
-#     aws_instance.splunk_ent.*.public_ip,
-#   )
-# }
-
-# output "splunk_ent_urls" {
-#   value =  formatlist(
-#     "%s%s:%s", 
-#     "http://",
-#     aws_instance.splunk_ent.*.public_ip,
-#     "8000",
-#   )
-# }
 
 output "splunk_password" {
   value = var.splunk_admin_pwd

@@ -47,14 +47,6 @@ splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
 splunk_listen_interface=localhost
 splunk_realm=$REALM
 EOF
-
-#### HACK TO FIX MISSING 'README/inputs.conf.spec' - REMOVE WHEN FIXED ####
-# mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/README
-# cp /tmp/inputs.conf.spec /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/README/inputs.conf.spec
-
-# mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/README
-# cp /tmp/inputs.conf.spec /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/README/inputs.conf.spec
-
 ########## End Setup Splunk_TA_otel_base ##########
 
 ########## Setup Splunk_TA_otel_apps_mysql ##########
@@ -62,20 +54,22 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/inp
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
 splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-otel-for-ta.yaml
 
 [monitor:///var/log/mysql/query.log]
-index = conftech-mysql
+index = mysql
 sourcetype = mysql:generalQueryLog
 disabled = 0
 
 [monitor:///var/log/mysql/mysql-slow.log]
-index = conftech-mysql
+index = mysql
 sourcetype = mysql:slowQueryLog
 disabled = 0
 
 [monitor:///var/log/mysql/error.log]
-index = conftech-mysql
+index = mysql
 sourcetype = mysql:errorLog
 disabled = 0
 EOF
@@ -90,10 +84,12 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/in
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
 splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/apache-otel-for-ta.yaml
 
 [monitor:///var/log/apache2]
-index=conftech-apache2
+index=apache2
 sourcetype = access_combined
 disabled = 0
 EOF
@@ -109,7 +105,9 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/in
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
 splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql/configs/ms-sql-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/ms-sql-otel-for-ta.yaml
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/access_token
@@ -117,16 +115,42 @@ $ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_ms_sql ##########
 
+########## Setup Splunk_UF_logs_to_deployment_server ##########
+mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/
+mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local/outputs.conf
+[tcpout]
+defaultGroup = splunk_ent
+
+[tcpout:splunk_ent]
+server = 172.32.2.10:9997
+
+[tcpout-server://172.32.2.10:9997]
+EOF
+########## End Splunk_UF_logs_to_deployment_server ##########
+
 ########## Setup Serverclasses ##########
 cat << EOF > /opt/splunk/etc/system/local/serverclass.conf
-[serverClass:UF:app:100_iae-us0_splunkcloud]
+
+## Choice of sending logs to Splunk Cloud or to the Deployment Server 
+# [serverClass:UF:app:100_iae-us0_splunkcloud]
+# restartSplunkWeb = 0
+# restartSplunkd = 1
+# stateOnClient = enabled
+
+# [serverClass:UF]
+# machineTypesFilter = linux-x86_64,windows-x64
+# whitelist.0 = *
+
+[serverClass:Splunk-UF-logs-to-deployment-server:app:Splunk_UF_logs_to_deployment_server]
 restartSplunkWeb = 0
 restartSplunkd = 1
 stateOnClient = enabled
 
-[serverClass:UF]
-machineTypesFilter = linux-x86_64,windows-x64
+[serverClass:Splunk-UF-logs-to-deployment-server]
 whitelist.0 = *
+
 
 [serverClass:Linux Hosts:app:Splunk_TA_nix]
 restartSplunkWeb = 0
@@ -185,5 +209,3 @@ EOF
 
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf
 ########## Setup Serverclasses ##########
-
-# /opt/splunk/bin/splunk reload deploy-server -auth admin:$PASSWORD
