@@ -47,7 +47,7 @@ module "instances" {
   gateway_count                         = var.gateway_count
   mysql_count                           = var.mysql_count
   mysql_count_gw                        = var.mysql_count_gw
-  mysql_user                             = var.ms_sql_user
+  mysql_user                            = var.ms_sql_user
   mysql_user_pwd                        = var.ms_sql_user_pwd
   ms_sql_count                          = var.ms_sql_count
   ms_sql_user                           = var.ms_sql_user
