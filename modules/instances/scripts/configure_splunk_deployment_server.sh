@@ -130,6 +130,28 @@ server = 172.32.2.10:9997
 EOF
 ########## End Splunk_UF_logs_to_deployment_server ##########
 
+########## Setup Splunk_UF_windows_logs ##########
+mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_Windows_Logs/
+mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_Windows_Logs/local
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_UF_Windows_Logs/local/inputs.conf
+[WinEventLog://Application]
+disabled = 0
+start_from = oldest
+sourcetype = ApplicationLogs
+
+[WinEventLog://Security]
+disabled = 0
+start_from = oldest
+sourcetype = SecurityLogs
+
+[WinEventLog://System]
+disabled = 0
+start_from = oldest
+sourcetype = SystemLogs
+EOF
+########## End Splunk_UF_windows_logs ##########
+
 ########## Setup Serverclasses ##########
 cat << EOF > /opt/splunk/etc/system/local/serverclass.conf
 
@@ -151,6 +173,14 @@ stateOnClient = enabled
 [serverClass:Splunk-UF-logs-to-deployment-server]
 whitelist.0 = *
 
+[serverClass:Splunk-UF-windows-logs:app:Splunk_UF_Windows_Logs]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:Splunk-UF-windows-logs]
+machineTypesFilter = windows-x64
+whitelist.0 = *
 
 [serverClass:Linux Hosts:app:Splunk_TA_nix]
 restartSplunkWeb = 0
