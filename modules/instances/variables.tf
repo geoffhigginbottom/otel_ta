@@ -44,6 +44,63 @@ variable "windows_server_ami" {
 variable "my_public_ip" {
   default = []
 }
+variable "eip" {
+  default = []
+}
+
+### Instance Count Variables ###
+variable "mysql_count" {
+  default = {}
+}
+variable "apache_web_count" {
+  default = {}
+}
+variable "ms_sql_count" {
+  default = {}
+}
+variable "windows_server_count" {
+  default = {}
+}
+variable "splunk_ent_count" {
+  default = {}
+}
+
+variable "gateway_count" {
+  default = {}
+}
+variable "gw_private_ip" {
+  default = []
+}
+variable "mysql_gw_count" {
+  default = {}
+}
+variable "apache_web_gw_count" {
+  default = {}
+}
+
+
+### MySql Variables ###
+variable "mysql_user" {
+  default = []
+}
+variable "mysql_user_pwd" {
+  default = []
+}
+
+### MS Sql Variables ###
+variable "ms_sql_user" {
+  default = []
+}
+variable "ms_sql_user_pwd" {
+  default = []
+}
+variable "ms_sql_administrator_pwd" {
+  default = []
+}
+variable "windows_server_administrator_pwd" {
+  default = []
+}
+
 
 ### SignalFX Variables ###
 variable "access_token" {
@@ -61,42 +118,6 @@ variable "ballast" {
 variable "environment" {
   default = []
 }
-variable "gateway_count" {
-  default = {}
-}
-variable "mysql_count" {
-  default = {}
-}
-variable "mysql_count_gw" {
-  default = {}
-}
-variable "mysql_user" {
-  default = []
-}
-variable "mysql_user_pwd" {
-  default = []
-}
-variable "ms_sql_count" {
-  default = {}
-}
-variable "ms_sql_user" {
-  default = []
-}
-variable "ms_sql_user_pwd" {
-  default = []
-}
-variable "ms_sql_administrator_pwd" {
-  default = []
-}
-variable "windows_server_count" {
-  default = {}
-}
-variable "windows_server_administrator_pwd" {
-  default =[]
-}
-variable "apache_web_count" {
-  default = {}
-}
 
 ### Splunk Enterprise Variables ###
 variable "splunk_admin_pwd" {
@@ -104,9 +125,6 @@ variable "splunk_admin_pwd" {
 }
 variable "splunk_private_ip" {
   default = []
-}
-variable "splunk_ent_count" {
-  default = {}
 }
 variable "splunk_ent_version" {
   default = {}

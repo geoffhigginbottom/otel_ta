@@ -45,8 +45,9 @@ module "instances" {
   gateway_instance_type                 = var.gateway_instance_type
   ami                                   = data.aws_ami.latest-ubuntu.id
   gateway_count                         = var.gateway_count
+  gw_private_ip                         = var.gw_private_ip
   mysql_count                           = var.mysql_count
-  mysql_count_gw                        = var.mysql_count_gw
+  mysql_gw_count                        = var.mysql_gw_count
   mysql_user                            = var.ms_sql_user
   mysql_user_pwd                        = var.ms_sql_user_pwd
   ms_sql_count                          = var.ms_sql_count
@@ -60,6 +61,7 @@ module "instances" {
   windows_server_instance_type          = var.windows_server_instance_type
   windows_server_ami                    = data.aws_ami.windows-server.id
   apache_web_count                      = var.apache_web_count
+  apache_web_gw_count                   = var.apache_web_gw_count
   splunk_admin_pwd                      = var.splunk_admin_pwd
   splunk_private_ip                     = var.splunk_private_ip
   splunk_ent_count                      = var.splunk_ent_count
@@ -77,16 +79,21 @@ module "instances" {
   universalforwarder_url                = var.universalforwarder_url
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename
   windows_universalforwarder_url        = var.windows_universalforwarder_url
-  my_public_ip                          = var.my_public_ip
+  # my_public_ip                          = var.my_public_ip
+  my_public_ip                          = "${chomp(data.http.my_public_ip.response_body)}"
+  eip                                   = var.eip
 }
 
 
 ### Instances Outputs ###
-# output "OTEL_Gateway_Servers" {
-#   value = var.instances_enabled ? module.instances.*.gateway_details : null
-# }
+output "OTEL_Gateway_Server" {
+  value = var.instances_enabled ? module.instances.*.gateway_details : null
+}
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null
+}
+output "MySQL_GW_Servers" {
+  value = var.instances_enabled ? module.instances.*.mysql_gw_details : null
 }
 output "MS_SQL_Servers" {
   value = var.instances_enabled ? module.instances.*.ms_sql_details : null
@@ -94,12 +101,9 @@ output "MS_SQL_Servers" {
 output "Apache_Web_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_details : null
 }
-# output "collector_lb_dns" {
-#   value = var.instances_enabled ? module.instances.*.gateway_lb_int_dns : null
-# }
-# output "Windows_Servers" {
-#   value = var.instances_enabled ? module.instances.*.windows_server_details : null
-# }
+output "Apache_Web_GW_Servers" {
+  value = var.instances_enabled ? module.instances.*.apache_web_gw_details : null
+}
 
 ### Splunk Enterprise Outputs ###
 output "Splunk_Enterprise_Server" {

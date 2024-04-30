@@ -33,6 +33,7 @@ splunk_ingest_url=https://ingest.$REALM.signalfx.com
 splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
 splunk_listen_interface=localhost
 splunk_realm=$REALM
+splunk_gateway_url=172.32.2.100
 EOF
 
 mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/
@@ -46,8 +47,28 @@ splunk_ingest_url=https://ingest.$REALM.signalfx.com
 splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
 splunk_listen_interface=localhost
 splunk_realm=$REALM
+splunk_gateway_url=172.32.2.100
 EOF
 ########## End Setup Splunk_TA_otel_base ##########
+
+
+
+########## Setup Splunk_TA_otel_apps_gateway ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/inputs.conf
+[Splunk_TA_otel://Splunk_TA_otel]
+disabled=false
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/gateway_config.yaml
+EOF
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/access_token
+$ACCESSTOKEN
+EOF
+########## End Setup Splunk_TA_otel_apps_gateway ##########
+
+
 
 ########## Setup Splunk_TA_otel_apps_mysql ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/inputs.conf
@@ -78,6 +99,36 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/acc
 $ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_mysql ##########
+
+########## Setup Splunk_TA_otel_apps_mysql_gw ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local/inputs.conf
+[Splunk_TA_otel://Splunk_TA_otel]
+disabled=false
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-gw-otel-for-ta.yaml
+
+[monitor:///var/log/mysql/query.log]
+index = mysql
+sourcetype = mysql:generalQueryLog
+disabled = 0
+
+[monitor:///var/log/mysql/mysql-slow.log]
+index = mysql
+sourcetype = mysql:slowQueryLog
+disabled = 0
+
+[monitor:///var/log/mysql/error.log]
+index = mysql
+sourcetype = mysql:errorLog
+disabled = 0
+EOF
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local/access_token
+$ACCESSTOKEN
+EOF
+########## End Setup Splunk_TA_otel_apps_mysql_gw ##########
 
 ########## Setup Splunk_TA_otel_apps_apache ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/inputs.conf
@@ -116,8 +167,8 @@ EOF
 ########## End Setup Splunk_TA_otel_apps_ms_sql ##########
 
 ########## Setup Splunk_UF_logs_to_deployment_server ##########
-mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/
-mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local
+# mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/
+# mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local/outputs.conf
 [tcpout]
@@ -217,6 +268,7 @@ stateOnClient = enabled
 [serverClass:OTEL-MySql]
 machineTypesFilter = linux-x86_64
 whitelist.0 = *mysql*
+blacklist.0 = *gw*
 
 [serverClass:OTEL-Apache:app:Splunk_TA_otel_apps_apache]
 restartSplunkWeb = 0
@@ -235,6 +287,25 @@ stateOnClient = enabled
 [serverClass:OTEL-MSSql]
 machineTypesFilter = windows-x64
 whitelist.0 = *
+
+
+[serverClass:OTEL-GW:app:Splunk_TA_otel_apps_gateway]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:OTEL-GW]
+machineTypesFilter = linux-x86_64
+whitelist.0 = *gateway*
+
+[serverClass:OTEL-MySql-GW:app:Splunk_TA_otel_apps_mysql_gw]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:OTEL-MySql-GW]
+machineTypesFilter = linux-x86_64
+whitelist.0 = *mysqlgw*
 EOF
 
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf

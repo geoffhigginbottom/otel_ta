@@ -15,7 +15,7 @@ resource "aws_instance" "splunk_ent" {
   ami                       = var.ami
   instance_type             = var.splunk_ent_inst_type
   subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
-  private_ip                = "172.32.2.10"
+  private_ip                = var.splunk_private_ip
   root_block_device {
     volume_size = 32
     volume_type = "gp2"
@@ -53,6 +53,11 @@ resource "aws_instance" "splunk_ent" {
   }
 
   provisioner "file" {
+    source      = "${path.module}/config_files/mysql-gw-otel-for-ta.yaml"
+    destination = "/tmp/mysql-gw-otel-for-ta.yaml"
+  }
+
+  provisioner "file" {
     source      = "${path.module}/config_files/apache-otel-for-ta.yaml"
     destination = "/tmp/apache-otel-for-ta.yaml"
   }
@@ -63,8 +68,18 @@ resource "aws_instance" "splunk_ent" {
   }
 
   provisioner "file" {
+    source      = "${path.module}/config_files/gateway_config.yaml"
+    destination = "/tmp/gateway_config.yaml"
+  }
+
+  provisioner "file" {
     source      = "${path.module}/config_files/inputs.conf.spec"
     destination = "/tmp/inputs.conf.spec"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/Splunk_TA_otel.sh"
+    destination = "/tmp/Splunk_TA_otel.sh"
   }
 
   provisioner "file" {
@@ -139,9 +154,20 @@ resource "aws_instance" "splunk_ent" {
       "sudo rm -fr /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/linux_x86_64",
       "sudo rm -fr /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/windows_x86_64",
 
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server/local", 
+
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs",
+
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs",
+
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs",
 
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local",
@@ -155,9 +181,17 @@ resource "aws_instance" "splunk_ent" {
       "sudo cp /tmp/apache-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml",
       "sudo cp /tmp/ms-sql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs/ms-sql-otel-for-ta.yaml",
 
+      "sudo cp /tmp/gateway_config.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml",
+      "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml",
+
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
       "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
+
+    ## Replace Splunk_TA_otel.sh with custom version to support Gateway URL
+      "sudo chmod +x /tmp/Splunk_TA_otel.sh",
+      "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.sh /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.bak",
+      "sudo cp /tmp/Splunk_TA_otel.sh /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.sh",
 
     ## install NFR license
       "sudo mkdir /opt/splunk/etc/licenses/enterprise",
