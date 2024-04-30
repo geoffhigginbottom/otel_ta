@@ -7,17 +7,15 @@
 instances_enabled = true
 
 ## Instance Quantities ##
-mysql_count = "1"
-ms_sql_count = "1"
-apache_web_count = "1"
-splunk_ent_count = "1"
+mysql_count         = "1"
+ms_sql_count        = "1"
+apache_web_count    = "1"
+splunk_ent_count    = "1"
 
-gateway_count = "0" # Not functioning yet
-mysql_count_gw = "0" # Not functioning yet
-windows_server_count = "0" # Not functioning yet
-
-## Your Public IP - used for security rules
-my_public_ip  =  "XXXXX"
+# Optional: deploy a Gateway node and nodes that use the Gateway to send data to O11Y
+gateway_count        = "0" # should only be 1 as there is currently no LB setup so only a single GW should be deployed
+mysql_gw_count       = "0"
+apache_web_gw_count  = "0"
 
 ### AWS Variables ###
 region = "1"
@@ -27,25 +25,27 @@ vpc_cidr_block = "172.32.0.0/16"
 subnet_count   = "2"
 
 ## Auth Settings ##
-key_name              = "XXXXX"
-private_key_path      = "~/.ssh/id_rsa"
-instance_type         = "t2.micro"
-aws_access_key_id     = "XXXXXXXXXXXXX"
-aws_secret_access_key = "XXXXXXXXXXXXXXXXXXXXXXXXX"
+key_name                = "XXXX"
+private_key_path        = "~/.ssh/id_rsa"
+instance_type           = "t2.micro"
+aws_access_key_id       = "XXXX"
+aws_secret_access_key   = "XXXX"
 
 ### Splunk IM/APM Variables ###
-access_token                     = "XXXXXX"
-api_url                          = "https://api.XXX.signalfx.com"
-realm                            = "XXX"
-environment                      = "XXXXX"
+access_token                     = "XXXX"
+api_url                          = "https://api.eu0.signalfx.com"
+realm                            = "eu0"
+environment                      = "otel-ta-testing"
 
 ### Collector Variables ###
 ### https://quay.io/repository/signalfx/splunk-otel-collector?tab=tags
 gateway_instance_type = "t2.small"
 
 ### Splunk Enterprise Variables ###
-splunk_admin_pwd                        = "XXXXXXXXXXXXXXX"
+splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
+gw_private_ip                           = "172.32.2.100"
+eip                                     = "54.78.7.27"
 splunk_ent_filename                     = "splunk-9.0.5-e9494146ae5c-linux-2.6-amd64.deb"
 splunk_ent_version                      = "9.0.5"
 splunk_ent_inst_type                    = "t2.2xlarge"
@@ -53,21 +53,21 @@ universalforwarder_url                  = "https://download.splunk.com/products/
 universalforwarder_filename             = "splunkforwarder-9.2.0.1-d8ae995bf219-linux-2.6-amd64.deb"
 windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.1.1/windows/splunkforwarder-9.1.1-64e843ea36b1-x64-release.msi"
 windows_universalforwarder_filename     = "splunkforwarder-9.1.1-64e843ea36b1-x64-release.msi"
-splunk_enterprise_files_local_path      = "~/Documents/otel_ta_Files"   # path where splunk enterprise files resides on your local machine 
-splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_FY24_2H.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
+splunk_enterprise_files_local_path      = "~/Documents/TFDemo_Splunk_Files"   # path where splunk enterprise files resides on your local machine 
+splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_FY25_1H.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_8100.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
 splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_120.tgz"
 config_explorer_filename                = "config-explorer_1715.tgz"
 
 ### MS SQL Server Variables ###
-ms_sql_user              = "XXXXX"
-ms_sql_user_pwd          = "XXXXX"
-ms_sql_administrator_pwd = "XXXXX"
+ms_sql_user              = "signalfxagent"
+ms_sql_user_pwd          = "XXXX"
+ms_sql_administrator_pwd = "XXXX"
 ms_sql_instance_type     = "t3.xlarge"
 
 ### Windows Server Variables ###
-windows_server_administrator_pwd = "XXXXX"
+windows_server_administrator_pwd = "XXXX"
 windows_server_instance_type     = "t3.xlarge"
 
 ### MySQL Server Variables ###
