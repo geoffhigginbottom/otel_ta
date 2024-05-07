@@ -105,6 +105,23 @@ receivers:
     processes:
       - mysql
 
+  mysql:
+    endpoint: localhost:3306
+    username: signalfxagent
+    password: P@ssword123
+    collection_interval: 10s
+    initial_delay: 1s
+    statement_events:
+      digest_text_limit: 120
+      time_limit: 24h
+      limit: 250
+    metrics:
+      mysql.query.slow.count:
+        enabled: true
+      mysql.query.count:
+        enabled: true
+
+
 processors:
   batch:
   # Enabling the memory_limiter is strongly recommended for every pipeline.
@@ -196,6 +213,7 @@ service:
       - smartagent/signalfx-forwarder
       - smartagent/mysql
       - smartagent/processes
+      - mysql
       processors:
       - memory_limiter
       - batch
