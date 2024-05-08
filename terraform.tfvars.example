@@ -57,7 +57,7 @@ splunk_enterprise_files_local_path      = "~/Documents/TFDemo_Splunk_Files"   # 
 splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_FY25_1H.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_8100.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
-splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_120.tgz"
+splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_122.tgz"
 config_explorer_filename                = "config-explorer_1715.tgz"
 
 ### MS SQL Server Variables ###
