@@ -150,6 +150,25 @@ $ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_apache ##########
 
+########## Setup Splunk_TA_otel_apps_apache_gw ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local/inputs.conf
+[Splunk_TA_otel://Splunk_TA_otel]
+disabled=false
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache_gw/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/apache-otel-for-ta.yaml
+
+[monitor:///var/log/apache2]
+index=apache2
+sourcetype = access_combined
+disabled = 0
+EOF
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local/access_token
+$ACCESSTOKEN
+EOF
+########## End Setup Splunk_TA_otel_apps_apache_gw ##########
 
 ########## Setup Splunk_TA_otel_apps_ms_sql ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/inputs.conf
@@ -306,6 +325,16 @@ stateOnClient = enabled
 [serverClass:OTEL-MySql-GW]
 machineTypesFilter = linux-x86_64
 whitelist.0 = *mysqlgw*
+
+[serverClass:OTEL-Apache:app:Splunk_TA_otel_apps_apache_gw]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:OTEL-Apache-GW]
+machineTypesFilter = linux-x86_64
+whitelist.0 = *apachegw*
+
 EOF
 
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf

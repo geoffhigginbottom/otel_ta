@@ -4,9 +4,7 @@ resource "aws_instance" "mysqlgw" {
   instance_type             = var.mysql_instance_type
   subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
   key_name                  = var.key_name
-  vpc_security_group_ids    = [
-    aws_security_group.instances_sg.id
-  ]
+  vpc_security_group_ids    = [aws_security_group.instances_sg.id]
 
   tags = {
     Name = lower(join("_",[var.environment, "mysqlgw", count.index + 1]))
@@ -60,8 +58,9 @@ resource "aws_instance" "mysqlgw" {
     ## Install MySQL
       "sudo chmod +x /tmp/install_mysql.sh",
       "sudo /tmp/install_mysql.sh",
-      "sudo mysql -u root -p'root' -e \"CREATE USER 'signalfxagent'@'localhost' IDENTIFIED BY '${var.mysql_user_pwd}';\"",
+      "sudo mysql -u root -p'root' -e \"CREATE USER '${var.mysql_user}'@'localhost' IDENTIFIED BY '${var.mysql_user_pwd}';\"",
       "sudo mysql -u root -p'root' -e \"GRANT USAGE ON *.* TO '${var.mysql_user}'@'localhost';\"",
+      "sudo mysql -u root -p'root' -e \"GRANT SELECT ON *.* TO '${var.mysql_user}'@'localhost';\"",
       "sudo mysql -u root -p'root' -e \"GRANT REPLICATION CLIENT ON *.* TO '${var.mysql_user}'@'localhost';\"",
     
     ## Setup LoadGen Tools

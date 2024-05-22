@@ -7,6 +7,7 @@ extensions:
       endpoint: "${SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
       # endpoint: "${SPLUNK_API_URL}"
+      # Use instead when sending to gateway
       endpoint: "${SPLUNK_GATEWAY_URL}"
   
   smartagent:
@@ -16,16 +17,10 @@ extensions:
   
   zpages:
     #endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
-  
-  memory_ballast:
-    # In general, the ballast should be set to 1/3 of the collector's memory, the limit
-    # should be 90% of the collector's memory.
-    # The simplest way to specify the ballast size is set the value of SPLUNK_BALLAST_SIZE_MIB env variable.
-    size_mib: ${SPLUNK_BALLAST_SIZE_MIB}
 
 receivers:
-  fluentforward:
-    endpoint: 127.0.0.1:8006
+  # fluentforward:
+  #   endpoint: 127.0.0.1:8006
   
   hostmetrics:
     collection_interval: 10s
@@ -73,7 +68,13 @@ receivers:
         - targets: ["${SPLUNK_LISTEN_INTERFACE}:8888"]
         metric_relabel_configs:
           - source_labels: [ __name__ ]
-            regex: '.*grpc_io.*'
+            regex: 'otelcol_rpc_.*'
+            action: drop
+          - source_labels: [ __name__ ]
+            regex: 'otelcol_http_.*'
+            action: drop
+          - source_labels: [ __name__ ]
+            regex: 'otelcol_processor_batch_.*'
             action: drop
   
   smartagent/signalfx-forwarder:
@@ -106,6 +107,23 @@ receivers:
     processes:
       - mysql
 
+  mysql:
+    endpoint: localhost:3306
+    username: signalfxagent
+    password: P@ssword123
+    collection_interval: 10s
+    initial_delay: 1s
+    statement_events:
+      digest_text_limit: 120
+      time_limit: 24h
+      limit: 250
+    metrics:
+      mysql.query.slow.count:
+        enabled: true
+      mysql.query.count:
+        enabled: true
+
+
 processors:
   batch:
   # Enabling the memory_limiter is strongly recommended for every pipeline.
@@ -134,7 +152,6 @@ processors:
       #- action: insert
         #value: staging/production/...
         #key: deployment.environment
-        #
   
   # This helps splunk track usage and support of the TA
   resource/telemetry:
@@ -154,17 +171,17 @@ exporters:
     access_token: "${SPLUNK_ACCESS_TOKEN}"
     # api_url: "${SPLUNK_API_URL}"
     # ingest_url: "${SPLUNK_INGEST_URL}"
+    # Use instead when sending to gateway
     api_url: http://${SPLUNK_GATEWAY_URL}:6060
     ingest_url: http://${SPLUNK_GATEWAY_URL}:9943
     sync_host_metadata: true
     correlation:
   
+  # Send to gateway
   otlp:
     endpoint: "${SPLUNK_GATEWAY_URL}:4317"
     tls:
-      insecure: true
-  otlphttp:
-    endpoint: http://${SPLUNK_GATEWAY_URL}:4318
+      insecure: true    
 
   # Debug
   logging:
@@ -179,7 +196,6 @@ service:
   - health_check
   - http_forwarder
   - zpages
-  - memory_ballast
   - smartagent
   
   pipelines:
@@ -189,17 +205,21 @@ service:
       - otlp
       - smartagent/signalfx-forwarder
       - zipkin
-      
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
       #- resource/add_environment
-      
+
+      # exporters: 
+      # - sapm
+      # - signalfx
+      # Use instead when sending to gateway
       exporters:
+      - otlp
       - signalfx
-      - otlphttp
-    
+
     metrics:
       receivers:
       - hostmetrics
@@ -208,14 +228,18 @@ service:
       - smartagent/signalfx-forwarder
       - smartagent/mysql
       - smartagent/processes
+      - mysql
 
       processors:
       - memory_limiter
       - batch
       - resourcedetection
 
+      # exporters: 
+      # - signalfx
+      # Use instead when sending to gateway
       exporters:
-      - otlphttp
+      - otlp
     
     logs/signalfx:
       receivers:
@@ -230,26 +254,15 @@ service:
       exporters:
       - signalfx
     
-    # metrics/telemetry:
-    #   receivers:
-    #   - prometheus/internal
+    metrics/telemetry:
+      receivers:
+      - prometheus/internal
 
-    #   processors:
-    #   - memory_limiter
-    #   - batch
-    #   - resourcedetection
-    #   - resource/telemetry
-
-    #   exporters:
-    #   - signalfx
-
-    logs:
-      receivers: [otlp]
       processors:
       - memory_limiter
       - batch
       - resourcedetection
-      #- resource/add_environment
-      # exporters: [splunk_hec]
-      # Use instead when sending to gateway
-      exporters: [otlphttp]
+      - resource/telemetry
+
+      exporters:
+      - signalfx

@@ -78,11 +78,6 @@ resource "aws_instance" "splunk_ent" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/scripts/Splunk_TA_otel.sh"
-    destination = "/tmp/Splunk_TA_otel.sh"
-  }
-
-  provisioner "file" {
     source      = join("/",[var.splunk_enterprise_files_local_path, var.splunk_enterprise_license_filename])
     destination = "/tmp/${var.splunk_enterprise_license_filename}"
   }
@@ -173,6 +168,10 @@ resource "aws_instance" "splunk_ent" {
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs",
 
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs",
+
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs",
@@ -183,15 +182,11 @@ resource "aws_instance" "splunk_ent" {
 
       "sudo cp /tmp/gateway_config.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml",
       "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml",
+      "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml",
 
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
       "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM",
-
-    ## Replace Splunk_TA_otel.sh with custom version to support Gateway URL
-      "sudo chmod +x /tmp/Splunk_TA_otel.sh",
-      "sudo mv /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.sh /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.bak",
-      "sudo cp /tmp/Splunk_TA_otel.sh /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/linux_x86_64/bin/Splunk_TA_otel.sh",
 
     ## install NFR license
       "sudo mkdir /opt/splunk/etc/licenses/enterprise",

@@ -7,6 +7,8 @@ extensions:
       endpoint: "${SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
       endpoint: "${SPLUNK_API_URL}"
+      # Use instead when sending to gateway
+      # endpoint: "${SPLUNK_GATEWAY_URL}"
   
   smartagent:
     bundleDir: "${SPLUNK_BUNDLE_DIR}"
@@ -15,12 +17,6 @@ extensions:
   
   zpages:
     #endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
-  
-  memory_ballast:
-    # In general, the ballast should be set to 1/3 of the collector's memory, the limit
-    # should be 90% of the collector's memory.
-    # The simplest way to specify the ballast size is set the value of SPLUNK_BALLAST_SIZE_MIB env variable.
-    size_mib: ${SPLUNK_BALLAST_SIZE_MIB}
 
 receivers:
   fluentforward:
@@ -72,13 +68,19 @@ receivers:
         - targets: ["${SPLUNK_LISTEN_INTERFACE}:8888"]
         metric_relabel_configs:
           - source_labels: [ __name__ ]
-            regex: '.*grpc_io.*'
+            regex: 'otelcol_rpc_.*'
+            action: drop
+          - source_labels: [ __name__ ]
+            regex: 'otelcol_http_.*'
+            action: drop
+          - source_labels: [ __name__ ]
+            regex: 'otelcol_processor_batch_.*'
             action: drop
   
   smartagent/signalfx-forwarder:
     type: signalfx-forwarder
     listenAddress: "${SPLUNK_LISTEN_INTERFACE}:9080"
-  
+
   smartagent/processlist:
     type: processlist
   
@@ -150,7 +152,6 @@ processors:
       #- action: insert
         #value: staging/production/...
         #key: deployment.environment
-        #
   
   # This helps splunk track usage and support of the TA
   resource/telemetry:
@@ -170,9 +171,12 @@ exporters:
     access_token: "${SPLUNK_ACCESS_TOKEN}"
     api_url: "${SPLUNK_API_URL}"
     ingest_url: "${SPLUNK_INGEST_URL}"
+    # Use instead when sending to gateway
+    # api_url: http://${SPLUNK_GATEWAY_URL}:6060
+    # ingest_url: http://${SPLUNK_GATEWAY_URL}:9943
     sync_host_metadata: true
     correlation:
-  
+
   # Debug
   logging:
     verbosity: detailed
@@ -186,7 +190,6 @@ service:
   - health_check
   - http_forwarder
   - zpages
-  - memory_ballast
   - smartagent
   
   pipelines:
@@ -196,15 +199,21 @@ service:
       - otlp
       - smartagent/signalfx-forwarder
       - zipkin
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
       #- resource/add_environment
-      exporters:
+
+      exporters: 
       - sapm
       - signalfx
-    
+      # Use instead when sending to gateway
+      # exporters:
+      # - otlp
+      # - signalfx
+
     metrics:
       receivers:
       - hostmetrics
@@ -214,31 +223,40 @@ service:
       - smartagent/mysql
       - smartagent/processes
       - mysql
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
-      exporters:
+
+      exporters: 
       - signalfx
+      # Use instead when sending to gateway
+      # exporters:
+      # -otlp
     
     logs/signalfx:
       receivers:
       - signalfx
       - smartagent/processlist
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
+
       exporters:
       - signalfx
     
     metrics/telemetry:
       receivers:
       - prometheus/internal
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
       - resource/telemetry
+
       exporters:
       - signalfx
