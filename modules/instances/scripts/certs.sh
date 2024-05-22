@@ -14,7 +14,7 @@ Generating RSA private key, 2048 bit long modulus
 .....+++++
 e is 65537 (0x10001)
 Signature ok
-subject=/C=GB/ST=London/L=London/O=ACME/CN=conftech.geoffh.co.uk
+subject=/C=GB/ST=London/L=London/O=ACME/CN=eu-west-3-187.geoffh.co.uk
 Getting Private key
 Generating RSA private key, 2048 bit long modulus
 ..................................+++++
@@ -22,7 +22,7 @@ Generating RSA private key, 2048 bit long modulus
 e is 65537 (0x10001)
 writing RSA key
 Signature ok
-subject=/C=GB/ST=London/L=London/O=ACME/CN=conftech.geoffh.co.uk
+subject=/C=GB/ST=London/L=London/O=ACME/CN=eu-west-3-187.geoffh.co.uk
 Getting CA Private Key
 
 
@@ -43,7 +43,7 @@ ssl-extensions-x509.cnf
 ## Variables ##
 PATH=/opt/splunk/etc/auth/sloccerts
 PASSPHRASE=qwertyuiop
-FQDN=conftech.geoffh.co.uk
+FQDN=eu-west-3-187.geoffh.co.uk
 COUNTRY=GB
 STATE=London
 LOCATION=London
