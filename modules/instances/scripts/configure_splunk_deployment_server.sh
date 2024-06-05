@@ -61,6 +61,7 @@ splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/loca
 # splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml
 # splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/gateway_config.yaml
+splunk_listen_interface=0.0.0.0
 EOF
 
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/access_token
@@ -297,6 +298,7 @@ stateOnClient = enabled
 [serverClass:OTEL-Apache]
 machineTypesFilter = linux-x86_64
 whitelist.0 = *apache*
+blacklist.0 = *gw*
 
 [serverClass:OTEL-MSSql:app:Splunk_TA_otel_apps_ms_sql]
 restartSplunkWeb = 0
@@ -324,7 +326,7 @@ stateOnClient = enabled
 
 [serverClass:OTEL-MySql-GW]
 machineTypesFilter = linux-x86_64
-whitelist.0 = *mysql_gw*
+whitelist.0 = *mysql-gw*
 
 [serverClass:OTEL-Apache-GW:app:Splunk_TA_otel_apps_apache_gw]
 restartSplunkWeb = 0
@@ -333,7 +335,7 @@ stateOnClient = enabled
 
 [serverClass:OTEL-Apache-GW]
 machineTypesFilter = linux-x86_64
-whitelist.0 = *apache_gw*
+whitelist.0 = *apache-gw*
 
 EOF
 
