@@ -14,7 +14,7 @@ resource "aws_instance" "gateway" {
   ]
 
   tags = {
-    Name = lower(join("_",[var.environment, "gateway", count.index + 1]))
+    Name = lower(join("-",[var.environment, "gateway", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"

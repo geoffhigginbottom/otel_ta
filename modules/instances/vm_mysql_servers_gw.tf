@@ -7,7 +7,7 @@ resource "aws_instance" "mysqlgw" {
   vpc_security_group_ids    = [aws_security_group.instances_sg.id]
 
   tags = {
-    Name = lower(join("_",[var.environment, "mysql_gw", count.index + 1]))
+    Name = lower(join("-",[var.environment, "mysql-gw", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"

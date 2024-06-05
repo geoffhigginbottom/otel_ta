@@ -41,7 +41,7 @@ resource "aws_instance" "ms_sql" {
   EOF
 
   tags = {
-    Name = lower(join("_",[var.environment, "ms_sql", count.index + 1]))
+    Name = lower(join("-",[var.environment, "ms_sql", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"

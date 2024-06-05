@@ -26,7 +26,7 @@ resource "aws_instance" "splunk_ent" {
   ]
 
   tags = {
-    Name = lower(join("_",[var.environment, "splunk-ent", count.index + 1]))
+    Name = lower(join("-",[var.environment, "splunk-ent", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"

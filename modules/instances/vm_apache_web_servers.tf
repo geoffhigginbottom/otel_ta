@@ -21,7 +21,7 @@ resource "aws_instance" "apache_web" {
   vpc_security_group_ids    = [aws_security_group.instances_sg.id]
 
   tags = {
-    Name = lower(join("_",[var.environment, "apache", count.index + 1]))
+    Name = lower(join("-",[var.environment, "apache", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"
