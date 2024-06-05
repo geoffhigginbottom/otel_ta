@@ -186,12 +186,19 @@ service:
     
     logs/signalfx:
       receivers:
+
       - signalfx
-      processors: [memory_limiter, batch]
-      exporters: [signalfx]
+      processors:
+
+      - memory_limiter
+      - batch
+      
+      exporters:
+      - signalfx
     
     metrics/telemetry:
       receivers:
+      - hostmetrics
       - prometheus/internal
 
       processors:

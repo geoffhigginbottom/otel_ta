@@ -19,8 +19,8 @@ extensions:
     #endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
-  fluentforward:
-    endpoint: 127.0.0.1:8006
+  # fluentforward:
+  #   endpoint: 127.0.0.1:8006
   
   hostmetrics:
     collection_interval: 10s
@@ -157,7 +157,13 @@ exporters:
     ingest_url: http://${SPLUNK_GATEWAY_URL}:9943
     sync_host_metadata: true
     correlation:
-  
+
+  # Send to gateway
+  otlp:
+    endpoint: "${SPLUNK_GATEWAY_URL}:4317"
+    tls:
+      insecure: true 
+
   # Debug
   logging:
     verbosity: detailed
@@ -209,11 +215,11 @@ service:
       - batch
       - resourcedetection
 
-      exporters: 
+      # exporters: 
       # - signalfx
       # Use instead when sending to gateway
-      # exporters:
-      -otlp
+      exporters:
+      - otlp
     
     logs/signalfx:
       receivers:

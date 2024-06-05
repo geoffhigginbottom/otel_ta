@@ -63,6 +63,11 @@ resource "aws_instance" "splunk_ent" {
   }
 
   provisioner "file" {
+    source      = "${path.module}/config_files/apache-gw-otel-for-ta.yaml"
+    destination = "/tmp/apache-gw-otel-for-ta.yaml"
+  }
+
+  provisioner "file" {
     source      = "${path.module}/config_files/ms-sql-otel-for-ta.yaml"
     destination = "/tmp/ms-sql-otel-for-ta.yaml"
   }
@@ -182,7 +187,7 @@ resource "aws_instance" "splunk_ent" {
 
       "sudo cp /tmp/gateway_config.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml",
       "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml",
-      "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml",
+      "sudo cp /tmp/apache-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml",
 
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",

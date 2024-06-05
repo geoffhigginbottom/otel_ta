@@ -324,16 +324,16 @@ stateOnClient = enabled
 
 [serverClass:OTEL-MySql-GW]
 machineTypesFilter = linux-x86_64
-whitelist.0 = *mysqlgw*
+whitelist.0 = *mysql_gw*
 
-[serverClass:OTEL-Apache:app:Splunk_TA_otel_apps_apache_gw]
+[serverClass:OTEL-Apache-GW:app:Splunk_TA_otel_apps_apache_gw]
 restartSplunkWeb = 0
 restartSplunkd = 1
 stateOnClient = enabled
 
 [serverClass:OTEL-Apache-GW]
 machineTypesFilter = linux-x86_64
-whitelist.0 = *apachegw*
+whitelist.0 = *apache_gw*
 
 EOF
 
