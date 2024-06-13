@@ -4,8 +4,8 @@
 apt-get update
 apt-get upgrade -y
 
-# # Set the Server Timezone to CST
-# echo "America/Chicago" > /etc/timezone
+# Set the Server Timezone to UTC
+echo "UTC" > /etc/timezone
 # dpkg-reconfigure -f noninteractive tzdata
 
 # Enable Ubuntu Firewall and allow SSH & HTTP/S Ports
