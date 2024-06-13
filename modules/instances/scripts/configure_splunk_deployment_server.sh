@@ -171,6 +171,31 @@ $ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_apache_gw ##########
 
+
+
+
+########## Setup Splunk_TA_otel_apps_rocky ##########
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/local/inputs.conf
+[Splunk_TA_otel://Splunk_TA_otel]
+disabled=false
+splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_rocky/local/access_token
+# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
+splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_rocky/configs/rocky-otel-for-ta.yaml
+# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/rocky-otel-for-ta.yaml
+
+[monitor:///var/log/httpd]
+index=httpd
+sourcetype = access_combined
+disabled = 0
+EOF
+
+cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/local/access_token
+$ACCESSTOKEN
+EOF
+########## End Setup Splunk_TA_otel_apps_rocky ##########
+
+
+
 ########## Setup Splunk_TA_otel_apps_ms_sql ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
@@ -299,6 +324,20 @@ stateOnClient = enabled
 machineTypesFilter = linux-x86_64
 whitelist.0 = *apache*
 blacklist.0 = *gw*
+
+
+
+[serverClass:OTEL-Rocky:app:Splunk_TA_otel_apps_rocky]
+restartSplunkWeb = 0
+restartSplunkd = 1
+stateOnClient = enabled
+
+[serverClass:OTEL-Rocky]
+machineTypesFilter = linux-x86_64
+whitelist.0 = *rocky*
+blacklist.0 = *gw*
+
+
 
 [serverClass:OTEL-MSSql:app:Splunk_TA_otel_apps_ms_sql]
 restartSplunkWeb = 0

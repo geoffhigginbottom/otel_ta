@@ -20,6 +20,9 @@ variable "private_key_path"{
 variable "instance_type" {
   default = []
 }
+variable "rocky_instance_type" {
+  default = []
+}
 variable "gateway_instance_type" {
   default = []
 }
@@ -34,6 +37,9 @@ variable "windows_server_instance_type" {
 }
 variable "ami" {
   default = {}
+}
+variable "rocky_ami" {
+  default = []
 }
 variable "ms_sql_ami" {
   default = {}
@@ -57,6 +63,9 @@ variable "apache_web_count" {
 }
 variable "ms_sql_count" {
   default = {}
+}
+variable "rocky_count" {
+  default = []
 }
 variable "windows_server_count" {
   default = {}
@@ -139,6 +148,12 @@ variable "universalforwarder_filename" {
   default = {}
 }
 variable "universalforwarder_url" {
+  default = {}
+}
+variable "universalforwarder_filename_rpm" {
+  default = {}
+}
+variable "universalforwarder_url_rpm" {
   default = {}
 }
 variable "windows_universalforwarder_filename" {

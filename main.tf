@@ -41,9 +41,12 @@ module "instances" {
   key_name                              = var.key_name
   private_key_path                      = var.private_key_path
   instance_type                         = var.instance_type
+  rocky_instance_type                   = var.rocky_instance_type
   mysql_instance_type                   = var.mysql_instance_type
   gateway_instance_type                 = var.gateway_instance_type
-  ami                                   = data.aws_ami.latest-ubuntu.id
+  ami                                   = data.aws_ami.ubuntu.id
+  rocky_ami                             = data.aws_ami.rocky.id
+  rocky_count                           = var.rocky_count
   gateway_count                         = var.gateway_count
   gw_private_ip                         = var.gw_private_ip
   mysql_count                           = var.mysql_count
@@ -77,6 +80,8 @@ module "instances" {
   config_explorer_filename              = var.config_explorer_filename
   universalforwarder_filename           = var.universalforwarder_filename
   universalforwarder_url                = var.universalforwarder_url
+  universalforwarder_filename_rpm       = var.universalforwarder_filename_rpm
+  universalforwarder_url_rpm            = var.universalforwarder_url_rpm
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename
   windows_universalforwarder_url        = var.windows_universalforwarder_url
   # my_public_ip                          = var.my_public_ip
@@ -103,6 +108,9 @@ output "Apache_Web_Servers" {
 }
 output "Apache_Web_GW_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_gw_details : null
+}
+output "Rocky_Servers" {
+  value = var.instances_enabled ? module.instances.*.rocky_details : null
 }
 
 ### Splunk Enterprise Outputs ###

@@ -41,6 +41,9 @@ variable "private_key_path" {
 variable "instance_type" {
   default = []
 }
+variable "rocky_instance_type" {
+  default = []
+}
 variable "gateway_instance_type" {
   default = []
 }
@@ -81,18 +84,46 @@ variable "aws_region" {
 }
 
 ## Ubuntu AMI ##
-data "aws_ami" "latest-ubuntu" {
+data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # This is the owner id of Canonical who owns the official aws ubuntu images
 
   filter {
     name = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    # values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+    
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
+## Rocky AMI ##
+data "aws_ami" "rocky" {
+  most_recent = true
+  owners      = ["679593333241"]
+
+  filter {
+    name   = "name"
+    values = ["Rocky-8-EC2-Base-8.9-*"]
+    # values = ["Rocky-9-EC2-Base-9.1-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
 }
 
@@ -104,7 +135,6 @@ data "aws_ami" "ms-sql-server" {
   filter {
     name   = "name"
     values = ["Windows_Server-2022-English-Full-SQL_2022_Standard-*"]
-    
   }
 
   filter {
@@ -131,6 +161,9 @@ data "aws_ami" "windows-server" {
 
 ### Instance Count Variables ###
 variable "mysql_count" {
+  default = {}
+}
+variable "rocky_count" {
   default = {}
 }
 variable "apache_web_count" {
@@ -218,6 +251,12 @@ variable "universalforwarder_filename" {
   default = {}
 }
 variable "universalforwarder_url" {
+  default = {}
+}
+variable "universalforwarder_filename_rpm" {
+  default = {}
+}
+variable "universalforwarder_url_rpm" {
   default = {}
 }
 variable "windows_universalforwarder_filename" {

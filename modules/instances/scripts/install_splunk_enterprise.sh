@@ -39,6 +39,7 @@ curl -k -u admin:$PASSWORD https://localhost:8089/services/admin/roles \
 #Add Indexs
 # /opt/splunk/bin/splunk add index k8s-logs -auth admin:$PASSWORD
 /opt/splunk/bin/splunk add index apache2 -auth admin:$PASSWORD
+/opt/splunk/bin/splunk add index httpd -auth admin:$PASSWORD
 /opt/splunk/bin/splunk add index mysql -auth admin:$PASSWORD
 
 #Enable HEC
