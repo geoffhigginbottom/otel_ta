@@ -107,7 +107,7 @@ resource "aws_instance" "apache_web_gw" {
 output "apache_web_gw_details" {
   value =  formatlist(
     "%s, %s", 
-    aws_instance.apache_web.*.tags.Name,
-    aws_instance.apache_web.*.public_ip,
+    aws_instance.apache_web_gw.*.tags.Name,
+    aws_instance.apache_web_gw.*.public_ip,
   )
 }
