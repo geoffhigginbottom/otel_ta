@@ -90,8 +90,8 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-    # values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    # values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
@@ -112,8 +112,8 @@ data "aws_ami" "rocky" {
 
   filter {
     name   = "name"
-    values = ["Rocky-8-EC2-Base-8.9-*"]
-    # values = ["Rocky-9-EC2-Base-9.1-*"]
+    # values = ["Rocky-8-EC2-Base-8.9-*"]
+    values = ["Rocky-9-EC2-Base-9.1-*"]
   }
 
   filter {
