@@ -3,16 +3,16 @@
 
 extensions:
   health_check:
-    endpoint: "${SPLUNK_LISTEN_INTERFACE}:13133"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
   
   http_forwarder:
     ingress:
-      endpoint: "${SPLUNK_LISTEN_INTERFACE}:6060"
+      endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
-      endpoint: "https://api.${SPLUNK_REALM}.signalfx.com"
+      endpoint: "https://api.${env:SPLUNK_REALM}.signalfx.com"
   
   zpages:
-    endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
   hostmetrics:
@@ -34,20 +34,20 @@ receivers:
   jaeger:
     protocols:
       grpc:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:14250"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:14250"
       thrift_binary:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:6832"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6832"
       thrift_compact:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:6831"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6831"
       thrift_http:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:14268"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:14268"
   
   otlp:
     protocols:
       grpc:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:4317"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4317"
       http:
-        endpoint: "${SPLUNK_LISTEN_INTERFACE}:4318"
+        endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4318"
   
   # This section is used to collect the OpenTelemetry Collector metrics
   # Even if just a Splunk APM customer, these metrics are included
@@ -57,7 +57,7 @@ receivers:
       - job_name: 'otel-collector'
         scrape_interval: 10s
         static_configs:
-        - targets: ['${SPLUNK_LISTEN_INTERFACE}:8888']
+        - targets: ['${env:SPLUNK_LISTEN_INTERFACE}:8888']
         metric_relabel_configs:
           - source_labels: [ __name__ ]
             regex: 'otelcol_rpc_.*'
@@ -70,19 +70,19 @@ receivers:
             action: drop
   
   sapm:
-    endpoint: "${SPLUNK_LISTEN_INTERFACE}:7276"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:7276"
     # Whether to preserve incoming access token and use instead of exporter token
     # default = false
     #access_token_passthrough: true
 
   signalfx:
-    endpoint: "${SPLUNK_LISTEN_INTERFACE}:9943"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9943"
     # Whether to preserve incoming access token and use instead of exporter token
     # default = false
     #access_token_passthrough: true
 
   zipkin:
-    endpoint: "${SPLUNK_LISTEN_INTERFACE}:9411"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
 processors:
   batch:
@@ -92,7 +92,7 @@ processors:
   # https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/memorylimiter/README.md
   memory_limiter:
     check_interval: 2s
-    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}
+    limit_mib: ${env:SPLUNK_MEMORY_LIMIT_MIB}
 
   # Optional: The following processor can be used to add a default "deployment.environment" attribute to the traces
   # when it's not populated by instrumentation libraries.
@@ -120,15 +120,15 @@ processors:
 exporters:
   # Traces
   sapm:
-    access_token: "${SPLUNK_ACCESS_TOKEN}"
-    endpoint: "https://ingest.${SPLUNK_REALM}.signalfx.com/v2/trace"
+    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
+    endpoint: "https://ingest.${env:SPLUNK_REALM}.signalfx.com/v2/trace"
     sending_queue:
       num_consumers: 32
   
   # Metrics + Events
   signalfx:
-    access_token: "${SPLUNK_ACCESS_TOKEN}"
-    realm: "${SPLUNK_REALM}"
+    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
+    realm: "${env:SPLUNK_REALM}"
     sending_queue:
       num_consumers: 32
     ## Uncomment below if your agents are sending via signalfx exporter
@@ -137,8 +137,8 @@ exporters:
     #exclude_metrics: []
   
   signalfx/internal:
-    access_token: "${SPLUNK_ACCESS_TOKEN}"
-    realm: "${SPLUNK_REALM}"
+    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
+    realm: "${env:SPLUNK_REALM}"
     sync_host_metadata: true
   
   # Debug
@@ -148,7 +148,7 @@ exporters:
 service:
   telemetry:
     metrics:
-      address: "${SPLUNK_LISTEN_INTERFACE}:8888"
+      address: "${env:SPLUNK_LISTEN_INTERFACE}:8888"
   
   extensions: 
   - health_check
