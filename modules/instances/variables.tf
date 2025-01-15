@@ -1,3 +1,26 @@
+### Certificate Vars ###
+variable "certpath" {
+  default = []
+}
+variable "passphrase" {
+  default = []
+}
+variable "fqdn" {
+  default = []
+}
+variable "country" {
+  default = []
+}
+variable "state" {
+  default = []
+}
+variable "location" {
+  default = []
+}
+variable "org" {
+  default = []
+}
+
 ### AWS Variables ###
 variable "region" {
   default = {}
@@ -56,6 +79,9 @@ variable "eip" {
 
 ### Instance Count Variables ###
 variable "mysql_count" {
+  default = {}
+}
+variable "auto_discovery_mysql_count" {
   default = {}
 }
 variable "apache_web_count" {

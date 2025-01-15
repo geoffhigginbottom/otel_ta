@@ -64,6 +64,15 @@ splunk_cloud_uf_filename                = "splunkclouduf.spl"
 splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_133.tgz"
 config_explorer_filename                = "config-explorer_1715.tgz"
 
+### Certificate Vars ###
+certpath    = "/opt/splunk/etc/auth/sloccerts"
+passphrase  = "xxxxxxxx"
+fqdn        = "xxx.xxx.co.uk"
+country     = "GB"
+state       = "London"
+location    = "London"
+org         = "ACME"
+
 ### MS SQL Server Variables ###
 ms_sql_user              = "signalfxagent"
 ms_sql_user_pwd          = "XXXX"

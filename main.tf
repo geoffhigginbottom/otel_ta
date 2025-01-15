@@ -54,6 +54,7 @@ module "instances" {
   mysql_user                            = var.ms_sql_user
   mysql_user_pwd                        = var.ms_sql_user_pwd
   ms_sql_count                          = var.ms_sql_count
+  auto_discovery_mysql_count            = var.auto_discovery_mysql_count
   ms_sql_user                           = var.ms_sql_user
   ms_sql_user_pwd                       = var.ms_sql_user_pwd
   ms_sql_administrator_pwd              = var.ms_sql_administrator_pwd
@@ -84,9 +85,15 @@ module "instances" {
   universalforwarder_url_rpm            = var.universalforwarder_url_rpm
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename
   windows_universalforwarder_url        = var.windows_universalforwarder_url
-  # my_public_ip                          = var.my_public_ip
   my_public_ip                          = "${chomp(data.http.my_public_ip.response_body)}"
   eip                                   = var.eip
+  certpath                              = var.certpath
+  passphrase                            = var.passphrase
+  fqdn                                  = var.fqdn
+  country                               = var.country
+  state                                 = var.state
+  location                              = var.location
+  org                                   = var.org
 }
 
 
@@ -96,6 +103,9 @@ output "OTEL_Gateway_Server" {
 }
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null
+}
+output "Auto_Discovery_MySQL_Servers" {
+  value = var.instances_enabled ? module.instances.*.auto_discovery_mysql_details : null
 }
 output "MySQL_GW_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_gw_details : null

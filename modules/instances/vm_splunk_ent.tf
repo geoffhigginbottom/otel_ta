@@ -209,8 +209,18 @@ resource "aws_instance" "splunk_ent" {
       "sudo /opt/splunk/bin/splunk restart",
 
     ## Create Certs
+     # Create FQDN Ent Vars
+      "CERTPATH=${var.certpath}",
+      "PASSPHRASE=${var.passphrase}",
+      "FQDN=${var.fqdn}",
+      "COUNTRY=${var.country}",
+      "STATE=${var.state}",
+      "LOCATION=${var.location}",
+      "ORG=${var.org}",
+     # Run Script
       "sudo chmod +x /tmp/certs.sh",
-      "sudo /tmp/certs.sh",
+      "sudo /tmp/certs.sh $CERTPATH $PASSPHRASE $FQDN $COUNTRY $STATE $LOCATION $ORG",
+    # Create copy in /tmp for easy access for setting up Log Observer Conect
       "sudo cp /opt/splunk/etc/auth/sloccerts/mySplunkWebCert.pem /tmp/mySplunkWebCert.pem",
       "sudo chown ubuntu:ubuntu /tmp/mySplunkWebCert.pem",
     ]
