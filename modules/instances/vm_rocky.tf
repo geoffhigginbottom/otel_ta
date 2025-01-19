@@ -42,16 +42,18 @@ resource "aws_instance" "rocky" {
       "UNIVERSAL_FORWARDER_URL_RPM=${var.universalforwarder_url_rpm}",
       "PASSWORD=${var.splunk_admin_pwd}",
       var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      "PRIVATE_DNS=${self.private_dns}",
 
     ## Write env vars to file (used for debugging)
       "echo $UNIVERSAL_FORWARDER_FILENAME_RPM > /tmp/UNIVERSAL_FORWARDER_FILENAME_RPM",
       "echo $UNIVERSAL_FORWARDER_URL_RPM > /tmp/UNIVERSAL_FORWARDER_URL_RPM",
       "echo $PASSWORD > /tmp/PASSWORD",
       "echo $SPLUNK_IP > /tmp/SPLUNK_IP",
+      "echo $PRIVATE_DNS > /tmp/PRIVATE_DNS",
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder_rocky.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder_rocky.sh $UNIVERSAL_FORWARDER_FILENAME_RPM $UNIVERSAL_FORWARDER_URL_RPM $PASSWORD $SPLUNK_IP" : "echo skipping"
+      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder_rocky.sh $UNIVERSAL_FORWARDER_FILENAME_RPM $UNIVERSAL_FORWARDER_URL_RPM $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping"
     ]
   }
 

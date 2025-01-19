@@ -5,6 +5,7 @@ UNIVERSAL_FORWARDER_FILENAME=$1
 UNIVERSAL_FORWARDER_URL=$2
 PASSWORD=$3
 SPLUNK_IP=$4
+AWS_PRIVATE_DNS=$5
 
 # Check if wget is installed, if not, install it
 if ! command -v wget &> /dev/null
@@ -35,6 +36,13 @@ sudo /opt/splunkforwarder/bin/splunk enable boot-start
 
 # Set the deployment server
 sudo /opt/splunkforwarder/bin/splunk set deploy-poll $SPLUNK_IP:8089 -auth admin:$PASSWORD
+
+# Restart Splunk
+sudo /opt/splunkforwarder/bin/splunk restart
+
+# Define FQDN as meta_data - need to test if we can do this before above restart
+sudo touch /opt/splunkforwarder/etc/system/local/inputs.conf
+echo -e "[default]\n_meta = host.name::$AWS_PRIVATE_DNS" | sudo tee /opt/splunkforwarder/etc/system/local/inputs.conf > /dev/null
 
 # Restart Splunk
 sudo /opt/splunkforwarder/bin/splunk restart
