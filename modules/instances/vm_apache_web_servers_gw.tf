@@ -72,16 +72,18 @@ resource "aws_instance" "apache_web_gw" {
       # "PASSWORD=${random_string.apache_universalforwarder_password.result}",
       "PASSWORD=${var.splunk_admin_pwd}",
       var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      "PRIVATE_DNS=${self.private_dns}",
 
     ## Write env vars to file (used for debugging)
       "echo $UNIVERSAL_FORWARDER_FILENAME > /tmp/UNIVERSAL_FORWARDER_FILENAME",
       "echo $UNIVERSAL_FORWARDER_URL > /tmp/UNIVERSAL_FORWARDER_URL",
       "echo $PASSWORD > /tmp/PASSWORD",
       "echo $SPLUNK_IP > /tmp/SPLUNK_IP",
+      "echo $PRIVATE_DNS > /tmp/PRIVATE_DNS",
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP" : "echo skipping",
+      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
 
     ## Run Locust
       "sudo apt-get -y install python3-pip",
@@ -106,8 +108,9 @@ resource "aws_instance" "apache_web_gw" {
 
 output "apache_web_gw_details" {
   value =  formatlist(
-    "%s, %s", 
-    aws_instance.apache_web_gw.*.tags.Name,
-    aws_instance.apache_web_gw.*.public_ip,
+    "%s, %s, %s", 
+    aws_instance.apache_web.*.tags.Name,
+    aws_instance.apache_web.*.public_ip,
+    aws_instance.apache_web.*.private_dns,
   )
 }
