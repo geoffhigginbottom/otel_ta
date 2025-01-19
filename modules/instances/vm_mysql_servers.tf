@@ -120,8 +120,9 @@ resource "aws_instance" "mysql" {
 
 output "mysql_details" {
   value =  formatlist(
-    "%s, %s", 
+    "%s, %s, %s", 
     aws_instance.mysql.*.tags.Name,
     aws_instance.mysql.*.public_ip,
+    aws_instance.mysql.*.private_dns,
   )
 }
