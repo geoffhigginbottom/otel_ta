@@ -104,9 +104,9 @@ output "OTEL_Gateway_Server" {
 output "MySQL_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_details : null
 }
-output "Auto_Discovery_MySQL_Servers" {
-  value = var.instances_enabled ? module.instances.*.auto_discovery_mysql_details : null
-}
+# output "Auto_Discovery_MySQL_Servers" {
+#   value = var.instances_enabled ? module.instances.*.auto_discovery_mysql_details : null
+# }
 output "MySQL_GW_Servers" {
   value = var.instances_enabled ? module.instances.*.mysql_gw_details : null
 }
