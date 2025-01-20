@@ -48,7 +48,7 @@ resource "aws_instance" "gateway" {
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $PRIVATE_DNS"" : "echo skipping",
+      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
     ]
   }
 
