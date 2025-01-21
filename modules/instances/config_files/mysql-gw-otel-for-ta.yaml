@@ -135,7 +135,8 @@ processors:
   # libraries can send wrong values from container environments.
   # https://docs.splunk.com/Observability/gdi/opentelemetry/components/resourcedetection-processor.html#ordering-considerations
   resourcedetection:
-    detectors: [gcp, ecs, ec2, azure, system]
+    # detectors: [gcp, ecs, ec2, azure, system]
+    detectors: [system]
     override: true
 
   # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 

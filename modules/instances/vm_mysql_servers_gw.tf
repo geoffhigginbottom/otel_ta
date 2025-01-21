@@ -91,6 +91,7 @@ resource "aws_instance" "mysqlgw" {
       "PASSWORD=${var.splunk_admin_pwd}",
       var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
       "PRIVATE_DNS=${self.private_dns}",
+      "HOSTNAME=${self.tags.Name}.local",
 
     ## Write env vars to file (used for debugging)
       "echo $UNIVERSAL_FORWARDER_FILENAME > /tmp/UNIVERSAL_FORWARDER_FILENAME",
@@ -101,7 +102,8 @@ resource "aws_instance" "mysqlgw" {
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
+      # var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
+      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL $PASSWORD $SPLUNK_IP $HOSTNAME" : "echo skipping",
 
     ## Run MySQL Loadgen Script
       "sudo systemctl daemon-reload",
