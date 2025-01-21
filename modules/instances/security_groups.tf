@@ -95,7 +95,11 @@ resource "aws_security_group" "splunk_ent_sg" {
     from_port   = 8089
     to_port     = 8089
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      "108.128.26.145/32",
+      "34.250.243.212/32",
+      "54.171.237.247/32"
+    ]
   }
 
   ingress {
