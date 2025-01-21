@@ -36,12 +36,35 @@ resource "aws_instance" "ms_sql" {
 
     $splunk_home="C:\Program Files\SplunkUniversalForwarder"
     & $splunk_home\bin\splunk set deploy-poll ${aws_instance.splunk_ent.0.private_ip}:8089 -auth SplunkAdmin:${var.splunk_admin_pwd}
+
+
+    # Fetch the instance's private IP DNS name
+    $privateIpDnsName = (Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/local-hostname").ToString()
+
+    # Write the DNS name to a file for verification
+    Set-Content -Path "C:\PrivateIpDnsName.txt" -Value $privateIpDnsName
+
+    # Create the file with specific contents
+    $filePath = "$splunk_home\etc\system\local\inputs.conf"
+    # Indentation seems to matter!
+    $fileContent = @"
+[WinEventLog://System]
+_meta = host.name::$privateIpDnsName
+
+[WinEventLog://Security]
+_meta = host.name::$privateIpDnsName
+
+[WinEventLog://Application]
+_meta = host.name::$privateIpDnsName
+"@
+    Set-Content -Path $filePath -Value $fileContent -Encoding UTF8
+
     & $splunk_home\bin\splunk restart
   </powershell>
   EOF
 
   tags = {
-    Name = lower(join("-",[var.environment, "ms_sql", count.index + 1]))
+    Name = lower(join("-",[var.environment, "ms-sql", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"
