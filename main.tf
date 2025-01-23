@@ -54,6 +54,7 @@ module "instances" {
   mysql_user                            = var.ms_sql_user
   mysql_user_pwd                        = var.ms_sql_user_pwd
   ms_sql_count                          = var.ms_sql_count
+  ms_sql_gw_count                       = var.ms_sql_gw_count
   auto_discovery_mysql_count            = var.auto_discovery_mysql_count
   ms_sql_user                           = var.ms_sql_user
   ms_sql_user_pwd                       = var.ms_sql_user_pwd
@@ -66,6 +67,10 @@ module "instances" {
   windows_server_ami                    = data.aws_ami.windows-server.id
   apache_web_count                      = var.apache_web_count
   apache_web_gw_count                   = var.apache_web_gw_count
+
+  proxy_server_count                    = var.proxy_server_count
+  proxied_apache_web_count              = var.proxied_apache_web_count
+
   splunk_admin_pwd                      = var.splunk_admin_pwd
   splunk_private_ip                     = var.splunk_private_ip
   splunk_ent_count                      = var.splunk_ent_count
@@ -112,6 +117,9 @@ output "MySQL_GW_Servers" {
 }
 output "MS_SQL_Servers" {
   value = var.instances_enabled ? module.instances.*.ms_sql_details : null
+}
+output "MS_SQL_GW_Servers" {
+  value = var.instances_enabled ? module.instances.*.ms_sql_gw_details : null
 }
 output "Apache_Web_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_details : null

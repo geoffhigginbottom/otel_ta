@@ -112,6 +112,17 @@ variable "mysql_gw_count" {
 variable "apache_web_gw_count" {
   default = {}
 }
+variable "ms_sql_gw_count" {
+  default = {}
+}
+
+
+variable "proxy_server_count" {
+  default = {}
+}
+variable "proxied_apache_web_count" {
+  default = {}
+}
 
 
 ### MySql Variables ###
