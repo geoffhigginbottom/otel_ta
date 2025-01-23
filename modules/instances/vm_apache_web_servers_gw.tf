@@ -1,8 +1,3 @@
-# resource "random_string" "apache_universalforwarder_password" {
-#   length           = 12
-#   special          = false
-# }
-
 resource "aws_instance" "apache_web_gw" {
   count                     = var.apache_web_gw_count
   ami                       = var.ami
