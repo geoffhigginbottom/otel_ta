@@ -78,6 +78,11 @@ resource "aws_instance" "splunk_ent" {
   }
 
   provisioner "file" {
+    source      = "${path.module}/config_files/ms-sql-gw-otel-for-ta.yaml"
+    destination = "/tmp/ms-sql-gw-otel-for-ta.yaml"
+  }
+
+  provisioner "file" {
     source      = "${path.module}/config_files/gateway_config.yaml"
     destination = "/tmp/gateway_config.yaml"
   }
@@ -190,6 +195,10 @@ resource "aws_instance" "splunk_ent" {
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local",
       "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs",
 
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/local",
+      "sudo mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/configs",
+
       "sudo cp /tmp/mysql-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml",
       "sudo cp /tmp/apache-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml",
       "sudo cp /tmp/rocky-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/configs/rocky-otel-for-ta.yaml",
@@ -198,6 +207,7 @@ resource "aws_instance" "splunk_ent" {
       "sudo cp /tmp/gateway_config.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml",
       "sudo cp /tmp/mysql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml",
       "sudo cp /tmp/apache-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml",
+      "sudo cp /tmp/ms-sql-gw-otel-for-ta.yaml /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/configs/ms-sql-gw-otel-for-ta.yaml",
 
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
