@@ -17,6 +17,11 @@ splunk_ent_count    = "1"
 gateway_count        = "1" # should only be 1 as there is currently no LB setup so only a single GW should be deployed
 mysql_gw_count       = "1"
 apache_web_gw_count  = "1"
+ms_sql_gw_count      = "1"
+
+# Optional - Proxied Instances
+proxy_server_count          = "0" # min 0 : max = 1 as only one is required, used as a yes/no parameter
+proxied_apache_web_count    = "0"
 
 ### AWS Variables ###
 region = "2" # also need to change EIP setting below
@@ -58,7 +63,7 @@ universalforwarder_filename_rpm         = "splunkforwarder-9.3.1-0b8d769cb912.x8
 windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.3.1/windows/splunkforwarder-9.3.1-0b8d769cb912-x64-release.msi"
 windows_universalforwarder_filename     = "splunkforwarder-9.3.1-0b8d769cb912-x64-release.msi" 
 splunk_enterprise_files_local_path      = "~/Documents/TFDemo_Splunk_Files"   # path where splunk enterprise files resides on your local machine 
-splunk_enterprise_license_filename      = "Splunk Enterprise NFR 1H 2025.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
+splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_8100.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
 splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_133.tgz"
