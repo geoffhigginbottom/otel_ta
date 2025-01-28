@@ -127,6 +127,9 @@ output "Apache_Web_Servers" {
 output "Apache_Web_GW_Servers" {
   value = var.instances_enabled ? module.instances.*.apache_web_gw_details : null
 }
+output "Proxied_Apache_Web_Servers" {
+  value = var.instances_enabled ? module.instances.*.proxied_apache_web_details : null
+}
 output "Rocky_Servers" {
   value = var.instances_enabled ? module.instances.*.rocky_details : null
 }
