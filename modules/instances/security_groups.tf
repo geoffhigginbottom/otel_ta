@@ -87,7 +87,8 @@ resource "aws_security_group" "splunk_ent_sg" {
     to_port     = 8089
     protocol    = "tcp"
     security_groups = [
-      aws_security_group.instances_sg.id
+      aws_security_group.instances_sg.id,
+      aws_security_group.proxied_instances_sg.id
     ]
   }
 
@@ -107,7 +108,8 @@ resource "aws_security_group" "splunk_ent_sg" {
     to_port     = 8088
     protocol    = "tcp"
     security_groups = [
-      aws_security_group.instances_sg.id
+      aws_security_group.instances_sg.id,
+      aws_security_group.proxied_instances_sg.id
     ]
   }
 
@@ -116,7 +118,8 @@ resource "aws_security_group" "splunk_ent_sg" {
     to_port     = 9997
     protocol    = "tcp"
     security_groups = [
-      aws_security_group.instances_sg.id
+      aws_security_group.instances_sg.id,
+      aws_security_group.proxied_instances_sg.id
     ]
   }
 
