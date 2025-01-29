@@ -355,7 +355,7 @@ stateOnClient = enabled
 
 [serverClass:OTEL-MSSql]
 machineTypesFilter = windows-x64
-whitelist.0 = *
+whitelist.0 = *ms-sql*
 blacklist.0 = *gw*
 
 
