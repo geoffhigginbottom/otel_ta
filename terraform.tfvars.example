@@ -10,7 +10,7 @@ instances_enabled = true
 mysql_count         = "1"
 ms_sql_count        = "1"
 apache_web_count    = "1"
-rocky_count         = "1"
+rocky_count         = "0"
 splunk_ent_count    = "1"
 
 # Optional: deploy a Gateway node and nodes that use the Gateway to send data to O11Y
@@ -53,21 +53,21 @@ splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
 gw_private_ip                           = "172.32.2.100"
 eip                                     = "nn.nn.nn.nn" #ensure this aligns with region setting above
-splunk_ent_filename                     = "splunk-9.3.1-0b8d769cb912-linux-2.6-amd64.deb"
-splunk_ent_version                      = "9.3.1"
+splunk_ent_filename                     = "splunk-9.4.0-6b4ebe426ca6-linux-amd64.deb"
+splunk_ent_version                      = "9.4.0"
 splunk_ent_inst_type                    = "t2.2xlarge"
-universalforwarder_url                  = "https://download.splunk.com/products/universalforwarder/releases/9.3.1/linux/splunkforwarder-9.3.1-0b8d769cb912-linux-2.6-amd64.deb"
-universalforwarder_filename             = "splunkforwarder-9.3.1-0b8d769cb912-linux-2.6-amd64.deb"
-universalforwarder_url_rpm              = "https://download.splunk.com/products/universalforwarder/releases/9.3.1/linux/splunkforwarder-9.3.1-0b8d769cb912.x86_64.rpm"
-universalforwarder_filename_rpm         = "splunkforwarder-9.3.1-0b8d769cb912.x86_64.rpm"
-windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.3.1/windows/splunkforwarder-9.3.1-0b8d769cb912-x64-release.msi"
-windows_universalforwarder_filename     = "splunkforwarder-9.3.1-0b8d769cb912-x64-release.msi" 
+universalforwarder_url                  = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/linux/splunkforwarder-9.4.0-6b4ebe426ca6-linux-amd64.deb"
+universalforwarder_filename             = "splunkforwarder-9.4.0-6b4ebe426ca6-linux-amd64.deb"
+universalforwarder_url_rpm              = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/linux/splunkforwarder-9.4.0-6b4ebe426ca6.x86_64.rpm"
+universalforwarder_filename_rpm         = "splunkforwarder-9.4.0-6b4ebe426ca6.x86_64.rpm"
+windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/windows/splunkforwarder-9.4.0-6b4ebe426ca6-windows-x64.msi"
+windows_universalforwarder_filename     = "splunkforwarder-9.4.0-6b4ebe426ca6-windows-x64.msi"
 splunk_enterprise_files_local_path      = "~/Documents/TFDemo_Splunk_Files"   # path where splunk enterprise files resides on your local machine 
 splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
-splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_8100.tgz"
+splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_920.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
 splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_133.tgz"
-config_explorer_filename                = "config-explorer_1715.tgz"
+config_explorer_filename                = "config-explorer_1716.tgz"
 
 ### Certificate Vars ###
 certpath    = "/opt/splunk/etc/auth/sloccerts"
