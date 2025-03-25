@@ -106,6 +106,9 @@ variable "gateway_count" {
 variable "gw_private_ip" {
   default = []
 }
+variable "proxy_server_private_ip" {
+  default = []
+}
 variable "mysql_gw_count" {
   default = {}
 }

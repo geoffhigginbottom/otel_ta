@@ -132,10 +132,6 @@ resource "aws_security_group" "splunk_ent_sg" {
   }
 }
 
-
-
-
-
 resource "aws_security_group" "proxy_server" {
   name          = "${var.environment}_proxy"
   description   = "Proxy Server"
@@ -215,5 +211,26 @@ resource "aws_security_group" "proxied_instances_sg" {
     security_groups = [
       "${aws_security_group.proxy_server.id}"
     ]
+  }
+
+  egress {
+    from_port   = 8088
+    to_port     = 8088
+    protocol    = "tcp"
+    cidr_blocks = ["${var.splunk_private_ip}/32"]
+  }
+
+  egress {
+    from_port   = 8089
+    to_port     = 8089
+    protocol    = "tcp"
+    cidr_blocks = ["${var.splunk_private_ip}/32"]
+  }
+
+  egress {
+    from_port   = 9997
+    to_port     = 9997
+    protocol    = "tcp"
+    cidr_blocks = ["${var.splunk_private_ip}/32"]
   }
 }

@@ -43,7 +43,7 @@ resource "aws_instance" "proxied_apache_web" {
     ## Update Env Vars - Set Proxy
       "sudo sed -i '$ a http_proxy=http://${aws_instance.proxy_server[0].private_ip}:8080/' /etc/environment",
       "sudo sed -i '$ a https_proxy=http://${aws_instance.proxy_server[0].private_ip}:8080/' /etc/environment",
-      "sudo sed -i '$ a no_proxy=169.254.169.254' /etc/environment",
+      "sudo sed -i '$ a no_proxy=169.254.169.254,${var.splunk_private_ip}' /etc/environment",
       "sudo source /etc/environment",
 
     ## Set Hostname
