@@ -49,6 +49,7 @@ module "instances" {
   rocky_count                           = var.rocky_count
   gateway_count                         = var.gateway_count
   gw_private_ip                         = var.gw_private_ip
+  proxy_server_private_ip               = var.proxy_server_private_ip
   mysql_count                           = var.mysql_count
   mysql_gw_count                        = var.mysql_gw_count
   mysql_user                            = var.ms_sql_user
@@ -151,5 +152,8 @@ output "splunk_enterprise_private_ip" {
   # sensitive = true
 }
 output "splunk_url" {
-  value = var.instances_enabled ? module.instances.*.splunk_ent_urls : null
+  value = var.instances_enabled ? module.instances.*.splunk_ent_url : null
+}
+output "splunk_url_fqdn" {
+  value = var.instances_enabled ? module.instances.*.splunk_ent_url_fqdn : null
 }
