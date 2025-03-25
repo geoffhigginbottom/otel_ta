@@ -137,6 +137,7 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/in
 disabled=false
 splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml
+discovery=true
 
 [monitor:///var/log/apache2]
 index=apache2
