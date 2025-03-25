@@ -34,6 +34,8 @@ override.tf.json
 
 variables.tfvars
 terraform.tfvars
+/non_public_files/
+/default_configs/
 
 retail*
 lambda.zip
