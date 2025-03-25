@@ -17,8 +17,8 @@ extensions:
     #endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
-  fluentforward:
-    endpoint: 127.0.0.1:8006
+  # fluentforward:
+    # endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:8006"
   
   hostmetrics:
     collection_interval: 10s
@@ -94,6 +94,9 @@ receivers:
     userID: ${SPLUNK_SQL_USER}
     password: ${SPLUNK_SQL_USER_PWD}
     appName: sqlserver
+    extraMetrics:
+      - sqlserver_memory_clerks.size_kb.bound_trees
+      - sqlserver_performance.active_temp_tables
 
   smartagent/procstat-mssqlserver:
     type: telegraf/procstat
@@ -102,12 +105,49 @@ receivers:
     pattern: MSSQLSERVER
     WinService: MSSQLSERVER
 
+  windowsperfcounters/memory:
+    metrics:
+      bytes.committed:
+        description: Number of bytes committed to memory
+        unit: By
+        gauge:
+    collection_interval: 10s
+    perfcounters:
+      - object: Memory
+        counters:
+          - name: Committed Bytes
+            metric: bytes.committed
+
+  windowsperfcounters/processor:
+    collection_interval: 5s
+    metrics:
+      processor.time:
+        description: CPU active and idle time
+        unit: "%"
+        gauge:
+    perfcounters:
+      - object: "Processor"
+        instances: "*"
+        counters:
+          - name: "% Processor Time"
+            metric: processor.time
+            attributes:
+              state: active
+      - object: "Processor"
+        instances: ["0", "1", "2", "3"]
+        counters:
+          - name: "% Idle Time"
+            metric: processor.time
+            attributes:
+              state: idle
+
   smartagent/ntp:
     type: ntp
     host: pool.ntp.org
 
 processors:
   batch:
+
   # Enabling the memory_limiter is strongly recommended for every pipeline.
   # Configuration is based on the amount of memory allocated to the collector.
   # For more information about memory limiter, see
@@ -134,7 +174,7 @@ processors:
       #- action: insert
         #value: staging/production/...
         #key: deployment.environment
-  
+
   # This helps splunk track usage and support of the TA
   resource/telemetry:
     attributes:
@@ -144,10 +184,11 @@ processors:
 
 exporters:
   # Traces
-  sapm:
-    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
-    endpoint: "${env:SPLUNK_TRACE_URL}"
-  
+  otlphttp:
+    traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
+    headers:
+      "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
+
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
@@ -157,7 +198,7 @@ exporters:
     correlation:
   
   # Debug
-  logging:
+  debug:
     verbosity: detailed
 
 service:
@@ -177,17 +218,17 @@ service:
       - jaeger
       - otlp
       - zipkin
-      
+
       processors:
       - memory_limiter
       - batch
       - resourcedetection
       #- resource/add_environment
-      
+
       exporters: 
-      - sapm
+      - otlphttp
       - signalfx
-    
+
     metrics:
       receivers:
       - hostmetrics
@@ -196,15 +237,30 @@ service:
       - smartagent/sqlserver
       - smartagent/procstat-mssqlserver
       - smartagent/ntp
+      - windowsperfcounters/memory
+      - windowsperfcounters/processor
 
       processors:
       - memory_limiter
       - batch
       - resourcedetection
 
-      exporters: 
+      exporters:
       - signalfx
-    
+
+    metrics/internal:
+      receivers:
+      - prometheus/internal
+
+      processors:
+      - memory_limiter
+      - batch
+      - resourcedetection
+      - resource/telemetry
+
+      exporters:
+      - signalfx
+
     logs/signalfx:
       receivers:
       - signalfx
@@ -214,19 +270,6 @@ service:
       - memory_limiter
       - batch
       - resourcedetection
-
-      exporters:
-      - signalfx
-    
-    metrics/telemetry:
-      receivers:
-      - prometheus/internal
-
-      processors:
-      - memory_limiter
-      - batch
-      - resourcedetection
-      - resource/telemetry
 
       exporters:
       - signalfx
