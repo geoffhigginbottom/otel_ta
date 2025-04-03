@@ -2,28 +2,12 @@
 # Version 4.0
 
 UNIVERSAL_FORWARDER_FILENAME=$1
-UNIVERSAL_FORWARDER_URL=$2
-PASSWORD=$3
-SPLUNK_IP=$4
-AWS_PRIVATE_DNS=$5
-
-# Check if wget is installed, if not, install it
-if ! command -v wget &> /dev/null
-then
-    echo "wget could not be found, installing wget"
-    sudo yum install -y wget
-fi
-
-# Download the universal forwarder package using wget or curl
-if command -v wget &> /dev/null
-then
-    wget -O $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL
-else
-    curl -o $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_URL
-fi
+PASSWORD=$2
+SPLUNK_IP=$3
+AWS_PRIVATE_DNS=$4
 
 # Install the universal forwarder package
-sudo rpm -i $UNIVERSAL_FORWARDER_FILENAME
+sudo rpm -i /tmp/$UNIVERSAL_FORWARDER_FILENAME
 
 # Set up the admin user
 sudo /opt/splunkforwarder/bin/splunk cmd splunkd rest --noauth POST /services/authentication/users 'name=admin&password='"$PASSWORD"'&roles=admin'

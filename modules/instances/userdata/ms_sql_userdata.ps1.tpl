@@ -2,6 +2,10 @@
 
 Get-LocalUser -Name "Administrator" | Set-LocalUser -Password (ConvertTo-SecureString -AsPlainText "${ms_sql_administrator_pwd}" -Force)
 
+# Install AWS CLI (for accessing secure S3 Buckets)
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+# Start-Sleep -Seconds 30  # Wait for the AWS CLI to finish installing
+
 [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO') | out-null
 $s = new-object('Microsoft.SqlServer.Management.Smo.Server') localhost
 $nm = $s.Name

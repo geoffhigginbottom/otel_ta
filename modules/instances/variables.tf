@@ -76,6 +76,12 @@ variable "my_public_ip" {
 variable "eip" {
   default = []
 }
+variable "ec2_instance_profile_name" {
+  type = string
+}
+variable "s3_bucket_name" {
+  default = {}
+}
 
 ### Instance Count Variables ###
 variable "mysql_count" {
@@ -187,22 +193,13 @@ variable "splunk_ent_inst_type" {
 variable "universalforwarder_filename" {
   default = {}
 }
-variable "universalforwarder_url" {
-  default = {}
-}
 variable "universalforwarder_filename_rpm" {
-  default = {}
-}
-variable "universalforwarder_url_rpm" {
   default = {}
 }
 variable "windows_universalforwarder_filename" {
   default = {}
 }
 variable "windows_universalforwarder_url" {
-  default = {}
-}
-variable "splunk_enterprise_files_local_path" {
   default = {}
 }
 variable "splunk_enterprise_license_filename" {

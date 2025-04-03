@@ -80,6 +80,9 @@ splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/local/
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml
 # splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-otel-for-ta.yaml
 
+mysql_user=
+mysql_pwd=
+
 [monitor:///var/log/mysql/query.log]
 index = mysql
 sourcetype = mysql:generalQueryLog
@@ -109,6 +112,9 @@ splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/loc
 # splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
 splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml
 # splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-gw-otel-for-ta.yaml
+
+mysql_user=
+mysql_pwd=
 
 [monitor:///var/log/mysql/query.log]
 index = mysql

@@ -5,8 +5,8 @@ import time
 # MySQL server connection parameters
 db_config = {
     "host": "localhost",
-    "user": "signalfxagent",
-    "password": "P@ssword123",
+    "user": "",
+    "password": "",
     "database": "loadgen"
 }
 

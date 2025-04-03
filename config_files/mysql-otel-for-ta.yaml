@@ -1,6 +1,3 @@
-# Configuration file that uses the Splunk exporters (SAPM, SignalFx) to push
-# data to Splunk products.
-
 extensions:
   health_check:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
@@ -9,12 +6,20 @@ extensions:
     ingress:
       endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
-      endpoint: "https://api.${env:SPLUNK_REALM}.signalfx.com"
+      endpoint: "${env:SPLUNK_API_URL}"
+  
+  smartagent:
+    bundleDir: "${env:SPLUNK_BUNDLE_DIR}"
+    collectd:
+      configDir: "${env:SPLUNK_COLLECTD_DIR}"
   
   zpages:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
+  # fluentforward:
+    # endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:8006"
+  
   hostmetrics:
     collection_interval: 10s
     scrapers:
@@ -31,6 +36,7 @@ receivers:
       processes:
       # System processes metrics, disabled by default
       # process:
+  
   jaeger:
     protocols:
       grpc:
@@ -41,14 +47,14 @@ receivers:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6831"
       thrift_http:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:14268"
-
+  
   otlp:
     protocols:
       grpc:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4317"
       http:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4318"
-
+  
   # This section is used to collect the OpenTelemetry Collector metrics
   # Even if just a Splunk APM customer, these metrics are included
   prometheus/internal:
@@ -57,7 +63,7 @@ receivers:
       - job_name: 'otel-collector'
         scrape_interval: 10s
         static_configs:
-        - targets: ['${env:SPLUNK_LISTEN_INTERFACE}:8888']
+        - targets: ["${env:SPLUNK_LISTEN_INTERFACE}:8888"]
         metric_relabel_configs:
           - source_labels: [ __name__ ]
             regex: 'otelcol_rpc_.*'
@@ -69,25 +75,51 @@ receivers:
             regex: 'otelcol_processor_batch_.*'
             action: drop
 
-  sapm:
-    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:7276"
-    # Whether to preserve incoming access token and use instead of exporter token
-    # default = false
-    #access_token_passthrough: true
-
+  smartagent/processlist:
+    type: processlist
+  
   signalfx:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9943"
     # Whether to preserve incoming access token and use instead of exporter token
     # default = false
     #access_token_passthrough: true
-
+  
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
+  smartagent/mysql:
+    type: collectd/mysql
+    host: 127.0.0.1
+    port: 3306
+    databases:
+      - name:
+    username: "${env:MYSQL_USER}"
+    password: "${env:MYSQL_PWD}"
+
+  smartagent/processes:
+    type: collectd/processes
+    processes:
+      - mysql
+
+  mysql:
+    endpoint: localhost:3306
+    username: "${env:MYSQL_USER}"
+    password: "${env:MYSQL_PWD}"
+    collection_interval: 10s
+    initial_delay: 1s
+    statement_events:
+      digest_text_limit: 120
+      time_limit: 24h
+      limit: 250
+    metrics:
+      mysql.query.slow.count:
+        enabled: true
+      mysql.query.count:
+        enabled: true
+
+
 processors:
   batch:
-    metadata_keys:
-      - X-SF-Token
 
   # Enabling the memory_limiter is strongly recommended for every pipeline.
   # Configuration is based on the amount of memory allocated to the collector.
@@ -97,95 +129,94 @@ processors:
     check_interval: 2s
     limit_mib: ${env:SPLUNK_MEMORY_LIMIT_MIB}
 
-  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the traces
-  # when it's not populated by instrumentation libraries.
-  # If enabled, make sure to enable this processor in the pipeline below.
+  # Detect if the collector is running on a cloud system, which is important for creating unique cloud provider dimensions.
+  # Detector order is important: the `system` detector goes last so it can't preclude cloud detectors from setting host/os info.
+  # Resource detection processor is configured to override all host and cloud attributes because instrumentation
+  # libraries can send wrong values from container environments.
+  # https://docs.splunk.com/Observability/gdi/opentelemetry/components/resourcedetection-processor.html#ordering-considerations
+  resourcedetection:
+    detectors: [gcp, ecs, ec2, azure, system]
+    override: true
+
+  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 
+  # traces when it's not populated by instrumentation libraries.
+  # If enabled, make sure to enable this processor in a pipeline.
+  # For more information, see https://docs.splunk.com/Observability/gdi/opentelemetry/components/resource-processor.html
   #resource/add_environment:
     #attributes:
       #- action: insert
         #value: staging/production/...
         #key: deployment.environment
 
-  # Detect if the collector is running on a cloud system. Overrides resource attributes set by receivers.
-  # Detector order is important: the `system` detector goes last so it can't preclude cloud detectors from setting host/os info.
-  # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#ordering
-  resourcedetection/internal:
-    detectors: [gcp, ecs, ec2, azure, system]
-    override: true
-
   # This helps splunk track usage and support of the TA
   resource/telemetry:
     attributes:
       - action: insert
         key: splunk.distribution
-        value: otel-ta-gateway
+        value: otel-ta
 
 exporters:
-   # Traces
+  # Traces
   otlphttp:
-    traces_endpoint: "${SPLUNK_INGEST_URL}/v2/trace/otlp"
-    sending_queue:
-      num_consumers: 32
+    traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
     headers:
-      "X-SF-Token": "${SPLUNK_ACCESS_TOKEN}"
+      "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
 
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
-    realm: "${env:SPLUNK_REALM}"
-    sending_queue:
-      num_consumers: 32
-    ## Uncomment below if your agents are sending via signalfx exporter
-    ## to avoid double translations and exclusions.
-    #translation_rules: []
-    #exclude_metrics: []
-
-  signalfx/internal:
-    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
-    realm: "${env:SPLUNK_REALM}"
+    api_url: "${env:SPLUNK_API_URL}"
+    ingest_url: "${env:SPLUNK_INGEST_URL}"
     sync_host_metadata: true
+    correlation:
 
   # Debug
-  # debug:
-    # verbosity: detailed
+  debug:
+    verbosity: detailed
 
 service:
   telemetry:
     metrics:
       address: "${env:SPLUNK_LISTEN_INTERFACE}:8888"
   
-  extensions: 
+  extensions:
   - health_check
   - http_forwarder
   - zpages
+  - smartagent
   
   pipelines:
     traces:
-      receivers:
+      receivers: 
       - jaeger
       - otlp
-      - sapm
       - zipkin
 
       processors:
       - memory_limiter
       - batch
+      - resourcedetection
       #- resource/add_environment
-      
-      exporters:
+
+      exporters: 
       - otlphttp
-    
+      - signalfx
+
     metrics:
       receivers:
       - hostmetrics
       - otlp
       - signalfx
+      - smartagent/mysql
+      - smartagent/processes
+      - mysql
 
       processors:
       - memory_limiter
       - batch
-      
-      exporters:
+      - resourcedetection
+
+      exporters: 
       - signalfx
 
     metrics/internal:
@@ -195,7 +226,7 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection/internal
+      - resourcedetection
       - resource/telemetry
 
       exporters:
@@ -203,12 +234,13 @@ service:
 
     logs/signalfx:
       receivers:
-
       - signalfx
-      processors:
+      - smartagent/processlist
 
+      processors:
       - memory_limiter
       - batch
-      
+      - resourcedetection
+
       exporters:
       - signalfx

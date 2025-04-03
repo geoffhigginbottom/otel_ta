@@ -27,6 +27,12 @@ module "vpc" {
   aws_secret_access_key = var.aws_secret_access_key
 }
 
+module "s3" {
+  source                    = "./modules/s3"
+  s3_bucket_name            = var.s3_bucket_name
+  environment               = var.environment
+}
+
 module "instances" {
   source                                = "./modules/instances"
   count                                 = var.instances_enabled ? 1 : 0
@@ -40,6 +46,8 @@ module "instances" {
   public_subnet_ids                     = module.vpc.public_subnet_ids
   key_name                              = var.key_name
   private_key_path                      = var.private_key_path
+  ec2_instance_profile_name             = module.s3.ec2_instance_profile_name
+  s3_bucket_name                        = var.s3_bucket_name
   instance_type                         = var.instance_type
   rocky_instance_type                   = var.rocky_instance_type
   mysql_instance_type                   = var.mysql_instance_type
@@ -77,7 +85,6 @@ module "instances" {
   splunk_ent_count                      = var.splunk_ent_count
   splunk_ent_version                    = var.splunk_ent_version
   splunk_ent_filename                   = var.splunk_ent_filename
-  splunk_enterprise_files_local_path    = var.splunk_enterprise_files_local_path
   splunk_enterprise_license_filename    = var.splunk_enterprise_license_filename
   splunk_enterprise_ta_linux_filename   = var.splunk_enterprise_ta_linux_filename
   splunk_ta_otel_filename               = var.splunk_ta_otel_filename
@@ -86,9 +93,7 @@ module "instances" {
   splunk_cloud_uf_filename              = var.splunk_cloud_uf_filename
   config_explorer_filename              = var.config_explorer_filename
   universalforwarder_filename           = var.universalforwarder_filename
-  universalforwarder_url                = var.universalforwarder_url
   universalforwarder_filename_rpm       = var.universalforwarder_filename_rpm
-  universalforwarder_url_rpm            = var.universalforwarder_url_rpm
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename
   windows_universalforwarder_url        = var.windows_universalforwarder_url
   my_public_ip                          = "${chomp(data.http.my_public_ip.response_body)}"

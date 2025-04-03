@@ -3,25 +3,17 @@
 # If values commented out, you will be prompted for them at run time, this way you
 # can choose to store the information in here, or enter it at run time.
 
-## Enable / Disable Modules ##
-instances_enabled = true
-
 ## Instance Quantities ##
 mysql_count         = "1"
 ms_sql_count        = "1"
 apache_web_count    = "1"
-rocky_count         = "0"
-splunk_ent_count    = "1"
+rocky_count         = "0" # slow to deploy so deploy the rest first, then add this is if required and re-run, it will be added
 
 # Optional: deploy a Gateway node and nodes that use the Gateway to send data to O11Y
-gateway_count        = "1" # should only be 1 as there is currently no LB setup so only a single GW should be deployed
-mysql_gw_count       = "1"
-apache_web_gw_count  = "1"
-ms_sql_gw_count      = "1"
-
-# Optional - Proxied Instances
-proxy_server_count          = "0" # min 0 : max = 1 as only one is required, used as a yes/no parameter
-proxied_apache_web_count    = "0"
+gateway_count        = "0" # should only be 1 as there is currently no LB setup so only a single GW should be deployed
+mysql_gw_count       = "0"
+apache_web_gw_count  = "0"
+ms_sql_gw_count      = "0"
 
 ### AWS Variables ###
 region = "2" # also need to change EIP setting below
@@ -35,8 +27,12 @@ key_name                = "XXXX"
 private_key_path        = "~/.ssh/id_rsa"
 instance_type           = "t2.micro"
 rocky_instance_type     = "t2.small"
+gateway_instance_type   = "t2.small"
 aws_access_key_id       = "XXXX"
 aws_secret_access_key   = "XXXX"
+
+## S3 ##
+s3_bucket_name          = "XXXX"
 
 ### Splunk IM/APM Variables ###
 access_token                     = "XXXX"
@@ -44,29 +40,22 @@ api_url                          = "https://api.eu0.signalfx.com"
 realm                            = "eu0"
 environment                      = "otel-ta-testing"
 
-### Collector Variables ###
-### https://quay.io/repository/signalfx/splunk-otel-collector?tab=tags
-gateway_instance_type = "t2.small"
-
 ### Splunk Enterprise Variables ###
 splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
 gw_private_ip                           = "172.32.2.100"
 eip                                     = "nn.nn.nn.nn" #ensure this aligns with region setting above
-splunk_ent_filename                     = "splunk-9.4.0-6b4ebe426ca6-linux-amd64.deb"
-splunk_ent_version                      = "9.4.0"
+splunk_ent_filename                     = "splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
+splunk_ent_version                      = "9.4.1"
 splunk_ent_inst_type                    = "t2.2xlarge"
-universalforwarder_url                  = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/linux/splunkforwarder-9.4.0-6b4ebe426ca6-linux-amd64.deb"
-universalforwarder_filename             = "splunkforwarder-9.4.0-6b4ebe426ca6-linux-amd64.deb"
-universalforwarder_url_rpm              = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/linux/splunkforwarder-9.4.0-6b4ebe426ca6.x86_64.rpm"
-universalforwarder_filename_rpm         = "splunkforwarder-9.4.0-6b4ebe426ca6.x86_64.rpm"
-windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.4.0/windows/splunkforwarder-9.4.0-6b4ebe426ca6-windows-x64.msi"
-windows_universalforwarder_filename     = "splunkforwarder-9.4.0-6b4ebe426ca6-windows-x64.msi"
-splunk_enterprise_files_local_path      = "~/Documents/TFDemo_Splunk_Files"   # path where splunk enterprise files resides on your local machine 
-splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml" # this file should NOT be included in the repo, and should be located in the splunk_enterprise_files_local_path location
+universalforwarder_filename             = "splunkforwarder-9.4.1-e3bdab203ac8-linux-amd64.deb"
+universalforwarder_filename_rpm         = "splunkforwarder-9.4.1-e3bdab203ac8.x86_64.rpm"
+windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.4.1/windows/splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
+windows_universalforwarder_filename     = "splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
+splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml" # https://splunk.atlassian.net/wiki/spaces/PROD/pages/313538952312/Internal+NFR+License+Keys
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_920.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
-splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_133.tgz"
+splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_140.tgz"
 config_explorer_filename                = "config-explorer_1716.tgz"
 
 ### Certificate Vars ###
@@ -89,6 +78,6 @@ windows_server_administrator_pwd = "XXXX"
 windows_server_instance_type     = "t3.xlarge"
 
 ### MySQL Server Variables ###
-mysql_user     = "signalfxagent" # Currently hard coded into mysql-otel-for-ta.yaml and mysql_loadgen.py - need to fix this
-mysql_user_pwd = "P@ssword123" # Currently hard coded into mysql-otel-for-ta.yaml and mysql_loadgen.py - need to fix this
+mysql_user     = "XXXX"
+mysql_user_pwd = "XXXX"
 mysql_instance_type = "t3.xlarge"

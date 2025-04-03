@@ -6,6 +6,7 @@ resource "aws_instance" "proxy_server" {
   private_ip                = var.proxy_server_private_ip
   key_name                  = var.key_name
   vpc_security_group_ids    = [aws_security_group.proxy_server.id]
+  iam_instance_profile      = var.ec2_instance_profile_name
 
   tags = {
     Name = lower(join("-",[var.environment, "proxy-server", count.index + 1]))
@@ -13,32 +14,53 @@ resource "aws_instance" "proxy_server" {
     splunkit_environment_type = "non-prd"
     splunkit_data_classification = "public"
   }
- 
-  provisioner "file" {
-    source      = "${path.module}/config_files/squid.conf"
-    destination = "/tmp/squid.conf"
-  }
 
   provisioner "remote-exec" {
     inline = [
-    ## Set Hostname
+    ## Set Hostname and update
       "sudo sed -i 's/127.0.0.1.*/127.0.0.1 ${self.tags.Name}.local ${self.tags.Name} localhost/' /etc/hosts",
       "sudo hostnamectl set-hostname ${self.tags.Name}",
-
-    ## Apply Updates
       "sudo apt-get update",
       "sudo apt-get update",
       "sudo apt-get upgrade -y",
-  
+
+    ## Install AWS CLI
+      "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+      "sudo apt install unzip -y",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install",
+    
+    ## Sync Non Public Files from S3
+      # "aws s3 cp s3://${var.s3_bucket_name}/scripts/xxx.sh /tmp/xxx.sh",
+      # "aws s3 cp s3://${var.s3_bucket_name}/config_files/xxx.yaml /tmp/xxx.yaml",
+      # "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${} /tmp/${}",
+
+      "aws s3 cp s3://${var.s3_bucket_name}/config_files/squid.conf /tmp/squid.conf",
+      "aws s3 cp s3://${var.s3_bucket_name}/scripts/install_splunk_universal_forwarder.sh /tmp/install_splunk_universal_forwarder.sh",
+
+      "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.universalforwarder_filename} /tmp/${var.universalforwarder_filename}",
+
     ## Install Proxy Server
       "sudo apt-get install squid -y",
       "sudo mv /etc/squid/squid.conf /etc/squid/squid.bak",
-      "sudo mv /tmp/squid.conf /etc/squid/squid.conf",
+      "sudo cp /tmp/squid.conf /etc/squid/squid.conf",
       "sudo systemctl restart squid",
 
-    # ## Install Otel Agent
-    #   "sudo curl -sSL https://dl.signalfx.com/splunk-otel-collector.sh > /tmp/splunk-otel-collector.sh",
-    #   "sudo sh /tmp/splunk-otel-collector.sh --realm ${var.realm}  -- ${var.access_token} --mode agent",
+    ## Generate Vars
+      "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
+      "PASSWORD=${var.splunk_admin_pwd}",
+      var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      "PRIVATE_DNS=${self.private_dns}",
+
+    ## Write env vars to file (used for debugging)
+      "echo $UNIVERSAL_FORWARDER_FILENAME > /tmp/UNIVERSAL_FORWARDER_FILENAME",
+      "echo $PASSWORD > /tmp/PASSWORD",
+      "echo $SPLUNK_IP > /tmp/SPLUNK_IP",
+      "echo $PRIVATE_DNS > /tmp/PRIVATE_DNS",
+
+    ## Install Splunk Universal Forwarder
+      "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
+      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
     ]
   }
 

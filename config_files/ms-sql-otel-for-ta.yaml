@@ -6,7 +6,7 @@ extensions:
     ingress:
       endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
-      endpoint: "${env:SPLUNK_GATEWAY_URL}"
+      endpoint: "${env:SPLUNK_API_URL}"
   
   smartagent:
     bundleDir: "${env:SPLUNK_BUNDLE_DIR}"
@@ -14,7 +14,7 @@ extensions:
       configDir: "${env:SPLUNK_COLLECTD_DIR}"
   
   zpages:
-    #endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
   # fluentforward:
@@ -87,36 +87,63 @@ receivers:
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
-  smartagent/mysql:
-    type: collectd/mysql
-    host: 127.0.0.1
-    port: 3306
-    databases:
-      - name:
-    username: signalfxagent
-    password: P@ssword123
+  smartagent/sqlserver:
+    type: telegraf/sqlserver
+    host: localhost
+    port: 1433
+    userID: ${SPLUNK_SQL_USER}
+    password: ${SPLUNK_SQL_USER_PWD}
+    appName: sqlserver
+    extraMetrics:
+      - sqlserver_memory_clerks.size_kb.bound_trees
+      - sqlserver_performance.active_temp_tables
 
-  smartagent/processes:
-    type: collectd/processes
-    processes:
-      - mysql
+  smartagent/procstat-mssqlserver:
+    type: telegraf/procstat
+    intervalSeconds: 1
+    exe: sqlservr.exe
+    pattern: MSSQLSERVER
+    WinService: MSSQLSERVER
 
-  mysql:
-    endpoint: localhost:3306
-    username: signalfxagent
-    password: P@ssword123
-    collection_interval: 10s
-    initial_delay: 1s
-    statement_events:
-      digest_text_limit: 120
-      time_limit: 24h
-      limit: 250
+  windowsperfcounters/memory:
     metrics:
-      mysql.query.slow.count:
-        enabled: true
-      mysql.query.count:
-        enabled: true
+      bytes.committed:
+        description: Number of bytes committed to memory
+        unit: By
+        gauge:
+    collection_interval: 10s
+    perfcounters:
+      - object: Memory
+        counters:
+          - name: Committed Bytes
+            metric: bytes.committed
 
+  windowsperfcounters/processor:
+    collection_interval: 5s
+    metrics:
+      processor.time:
+        description: CPU active and idle time
+        unit: "%"
+        gauge:
+    perfcounters:
+      - object: "Processor"
+        instances: "*"
+        counters:
+          - name: "% Processor Time"
+            metric: processor.time
+            attributes:
+              state: active
+      - object: "Processor"
+        instances: ["0", "1", "2", "3"]
+        counters:
+          - name: "% Idle Time"
+            metric: processor.time
+            attributes:
+              state: idle
+
+  smartagent/ntp:
+    type: ntp
+    host: pool.ntp.org
 
 processors:
   batch:
@@ -135,8 +162,7 @@ processors:
   # libraries can send wrong values from container environments.
   # https://docs.splunk.com/Observability/gdi/opentelemetry/components/resourcedetection-processor.html#ordering-considerations
   resourcedetection:
-    # detectors: [gcp, ecs, ec2, azure, system]
-    detectors: [system]
+    detectors: [gcp, ecs, ec2, azure, system]
     override: true
 
   # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 
@@ -154,23 +180,23 @@ processors:
     attributes:
       - action: insert
         key: splunk.distribution
-        value: otel-ta-gateway-agent
+        value: otel-ta
 
 exporters:
+  # Traces
+  otlphttp:
+    traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
+    headers:
+      "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
+
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
-    api_url: http://${env:SPLUNK_GATEWAY_URL}:6060
-    ingest_url: http://${env:SPLUNK_GATEWAY_URL}:9943
+    api_url: "${env:SPLUNK_API_URL}"
+    ingest_url: "${env:SPLUNK_INGEST_URL}"
     sync_host_metadata: true
     correlation:
-
-  # Send to gateway
-  otlp/gateway:
-    endpoint: "${env:SPLUNK_GATEWAY_URL}:4317"
-    tls:
-      insecure: true
-
+  
   # Debug
   debug:
     verbosity: detailed
@@ -200,7 +226,7 @@ service:
       #- resource/add_environment
 
       exporters: 
-      - otlp/gateway
+      - otlphttp
       - signalfx
 
     metrics:
@@ -208,9 +234,11 @@ service:
       - hostmetrics
       - otlp
       - signalfx
-      - smartagent/mysql
-      - smartagent/processes
-      - mysql
+      - smartagent/sqlserver
+      - smartagent/procstat-mssqlserver
+      - smartagent/ntp
+      - windowsperfcounters/memory
+      - windowsperfcounters/processor
 
       processors:
       - memory_limiter
@@ -218,7 +246,7 @@ service:
       - resourcedetection
 
       exporters:
-      - otlp/gateway
+      - signalfx
 
     metrics/internal:
       receivers:

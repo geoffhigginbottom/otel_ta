@@ -6,7 +6,7 @@ extensions:
     ingress:
       endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
-      endpoint: "${env:SPLUNK_API_URL}"
+      endpoint: "${env:SPLUNK_GATEWAY_URL}"
   
   smartagent:
     bundleDir: "${env:SPLUNK_BUNDLE_DIR}"
@@ -14,7 +14,7 @@ extensions:
       configDir: "${env:SPLUNK_COLLECTD_DIR}"
   
   zpages:
-    #endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
+    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
 receivers:
   # fluentforward:
@@ -87,16 +87,36 @@ receivers:
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
-  smartagent/apache:
-    type: collectd/apache
-    host: localhost
-    port: 80
-    url: "http://{{.Host}}:{{.Port}}/server-status?auto"
-  
+  smartagent/mysql:
+    type: collectd/mysql
+    host: 127.0.0.1
+    port: 3306
+    databases:
+      - name:
+    username: "${env:MYSQL_USER}"
+    password: "${env:MYSQL_PWD}"
+
   smartagent/processes:
     type: collectd/processes
     processes:
-      - httpd
+      - mysql
+
+  mysql:
+    endpoint: localhost:3306
+    username: "${env:MYSQL_USER}"
+    password: "${env:MYSQL_PWD}"
+    collection_interval: 10s
+    initial_delay: 1s
+    statement_events:
+      digest_text_limit: 120
+      time_limit: 24h
+      limit: 250
+    metrics:
+      mysql.query.slow.count:
+        enabled: true
+      mysql.query.count:
+        enabled: true
+
 
 processors:
   batch:
@@ -115,7 +135,8 @@ processors:
   # libraries can send wrong values from container environments.
   # https://docs.splunk.com/Observability/gdi/opentelemetry/components/resourcedetection-processor.html#ordering-considerations
   resourcedetection:
-    detectors: [gcp, ecs, ec2, azure, system]
+    # detectors: [gcp, ecs, ec2, azure, system]
+    detectors: [system]
     override: true
 
   # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 
@@ -133,22 +154,22 @@ processors:
     attributes:
       - action: insert
         key: splunk.distribution
-        value: otel-ta
+        value: otel-ta-gateway-agent
 
 exporters:
-  # Traces
-  otlphttp:
-    traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
-    headers:
-      "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
-
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
-    api_url: "${env:SPLUNK_API_URL}"
-    ingest_url: "${env:SPLUNK_INGEST_URL}"
+    api_url: http://${env:SPLUNK_GATEWAY_URL}:6060
+    ingest_url: http://${env:SPLUNK_GATEWAY_URL}:9943
     sync_host_metadata: true
     correlation:
+
+  # Send to gateway
+  otlp/gateway:
+    endpoint: "${env:SPLUNK_GATEWAY_URL}:4317"
+    tls:
+      insecure: true
 
   # Debug
   debug:
@@ -179,7 +200,7 @@ service:
       #- resource/add_environment
 
       exporters: 
-      - otlphttp
+      - otlp/gateway
       - signalfx
 
     metrics:
@@ -187,8 +208,9 @@ service:
       - hostmetrics
       - otlp
       - signalfx
-      - smartagent/apache
+      - smartagent/mysql
       - smartagent/processes
+      - mysql
 
       processors:
       - memory_limiter
@@ -196,7 +218,7 @@ service:
       - resourcedetection
 
       exporters:
-      - signalfx
+      - otlp/gateway
 
     metrics/internal:
       receivers:

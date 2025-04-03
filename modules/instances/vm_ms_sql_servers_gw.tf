@@ -5,8 +5,9 @@ resource "aws_instance" "ms_sql_gw" {
   subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
   key_name                  = var.key_name
   vpc_security_group_ids    = [aws_security_group.instances_sg.id]
+  iam_instance_profile      = var.ec2_instance_profile_name
 
-  user_data = templatefile("${path.module}/scripts/ms_sql_gw_userdata.ps1.tpl", {
+  user_data = templatefile("${path.module}/userdata/ms_sql_gw_userdata.ps1.tpl", {
     ms_sql_administrator_pwd            = var.ms_sql_administrator_pwd
     ms_sql_user                         = var.ms_sql_user
     ms_sql_user_pwd                     = var.ms_sql_user_pwd
