@@ -58,6 +58,7 @@ resource "aws_instance" "splunk_ent" {
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/certs.sh /tmp/certs.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_inputs_conf_spec.sh /tmp/update_inputs_conf_spec.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_mysql_inputs.sh /tmp/update_mysql_inputs.sh",
+      "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_mysql_inputs_gw.sh /tmp/update_mysql_inputs_gw.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_splunk_ta_otel_sh.sh /tmp/update_splunk_ta_otel_sh.sh",
 
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/mysql-otel-for-ta.yaml /tmp/mysql-otel-for-ta.yaml",
@@ -168,10 +169,12 @@ resource "aws_instance" "splunk_ent" {
     ##### TESTING Update Config for MySQL Parameters TESTING #####
       "sudo chmod +x /tmp/update_inputs_conf_spec.sh",
       "sudo chmod +x /tmp/update_mysql_inputs.sh",
+      "sudo chmod +x /tmp/update_mysql_inputs_gw.sh",
       "sudo chmod +x /tmp/update_splunk_ta_otel_sh.sh",
 
       "sudo /tmp/update_inputs_conf_spec.sh",
       "sudo /tmp/update_mysql_inputs.sh $MYSQL_USER $MYSQL_USER_PWD",
+      "sudo /tmp/update_mysql_inputs_gw.sh $MYSQL_USER $MYSQL_USER_PWD",
       "sudo /tmp/update_splunk_ta_otel_sh.sh",
 
       "sudo /opt/splunk/bin/splunk reload deploy-server -auth admin:${var.splunk_admin_pwd}", # Does this work??? latest edit
