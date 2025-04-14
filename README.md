@@ -177,13 +177,13 @@ windows_universalforwarder_filename     = "splunkforwarder-9.4.1-e3bdab203ac8-wi
 splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml"
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_920.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
-splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_140.tgz"
+splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_141.tgz"
 config_explorer_filename                = "config-explorer_1716.tgz"
 
 ### Certificate Vars ###
 certpath    = "/opt/splunk/etc/auth/sloccerts"
-passphrase  = "qwertyuiop"
-fqdn        = "eu-west-3-167.geoffh.co.uk"
+passphrase  = "XXXX"
+fqdn        = "XXXX"
 country     = "GB"
 state       = "London"
 location    = "London"

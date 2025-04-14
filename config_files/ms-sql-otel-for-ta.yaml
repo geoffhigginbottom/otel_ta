@@ -63,13 +63,10 @@ receivers:
       - job_name: 'otel-collector'
         scrape_interval: 10s
         static_configs:
-        - targets: ["${env:SPLUNK_LISTEN_INTERFACE}:8888"]
+        - targets: ["0.0.0.0:8888"]
         metric_relabel_configs:
           - source_labels: [ __name__ ]
-            regex: 'otelcol_rpc_.*'
-            action: drop
-          - source_labels: [ __name__ ]
-            regex: 'otelcol_http_.*'
+            regex: 'promhttp_metric_handler_errors.*'
             action: drop
           - source_labels: [ __name__ ]
             regex: 'otelcol_processor_batch_.*'
@@ -147,6 +144,8 @@ receivers:
 
 processors:
   batch:
+    metadata_keys:
+      - X-SF-Token
 
   # Enabling the memory_limiter is strongly recommended for every pipeline.
   # Configuration is based on the amount of memory allocated to the collector.
@@ -196,7 +195,7 @@ exporters:
     ingest_url: "${env:SPLUNK_INGEST_URL}"
     sync_host_metadata: true
     correlation:
-  
+
   # Debug
   debug:
     verbosity: detailed
