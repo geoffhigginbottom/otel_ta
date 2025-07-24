@@ -2,15 +2,21 @@
 # data to Splunk products.
 
 extensions:
+  headers_setter:
+    headers:
+      - action: upsert
+        key: X-SF-TOKEN
+        from_context: X-SF-TOKEN
+        default_value: "${SPLUNK_ACCESS_TOKEN}"
   health_check:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
-  
+
   http_forwarder:
     ingress:
       endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
       endpoint: "https://api.${env:SPLUNK_REALM}.signalfx.com"
-  
+
   zpages:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
 
@@ -46,8 +52,12 @@ receivers:
     protocols:
       grpc:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4317"
+        # Uncomment below config to preserve incoming access token and use it instead of the token value set in exporter config
+        # include_metadata: true
       http:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4318"
+        # Uncomment below config to preserve incoming access token and use it instead of the token value set in exporter config
+        # include_metadata: true
 
   # This section is used to collect the OpenTelemetry Collector metrics
   # Even if just a Splunk APM customer, these metrics are included
@@ -57,7 +67,7 @@ receivers:
       - job_name: 'otel-collector'
         scrape_interval: 10s
         static_configs:
-        - targets: ["0.0.0.0:8888"]
+        - targets: ['0.0.0.0:8888']
         metric_relabel_configs:
           - source_labels: [ __name__ ]
             regex: 'promhttp_metric_handler_errors.*'
@@ -103,6 +113,7 @@ processors:
         #value: staging/production/...
         #key: deployment.environment
 
+
   # Detect if the collector is running on a cloud system. Overrides resource attributes set by receivers.
   # Detector order is important: the `system` detector goes last so it can't preclude cloud detectors from setting host/os info.
   # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#ordering
@@ -115,17 +126,19 @@ processors:
   resource/telemetry:
     attributes:
       - action: insert
+        value: otel-ta-gateway-agent
         key: splunk.distribution
-        value: otel-ta-gateway
 
 exporters:
-   # Traces
+  # Traces
   otlphttp:
     traces_endpoint: "${SPLUNK_INGEST_URL}/v2/trace/otlp"
     sending_queue:
       num_consumers: 32
     headers:
       "X-SF-Token": "${SPLUNK_ACCESS_TOKEN}"
+    auth:
+      authenticator: headers_setter
 
   # Metrics + Events
   signalfx:
@@ -144,15 +157,29 @@ exporters:
     sync_host_metadata: true
 
   # Debug
-  # debug:
-    # verbosity: detailed
+  #debug:
+    #verbosity: detailed
+
+  # To send entities (applicable only if discovery mode is enabled)
+  otlphttp/entities:
+    logs_endpoint: "${SPLUNK_INGEST_URL}/v3/event"
+    headers:
+      "X-SF-Token": "${SPLUNK_ACCESS_TOKEN}"
+    auth:
+      authenticator: headers_setter
+
+connectors:
+  # Routing connector to separate entity events from regular logs
+  routing/logs:
+    default_pipelines: [logs]
+    table:
+      - context: log
+        condition: instrumentation_scope.attributes["otel.entity.event_as_log"] == true
+        pipelines: [logs/entities]
 
 service:
-  telemetry:
-    metrics:
-      address: "${env:SPLUNK_LISTEN_INTERFACE}:8888"
-  
-  extensions: 
+  extensions:
+  - headers_setter
   - health_check
   - http_forwarder
   - zpages
@@ -201,12 +228,20 @@ service:
 
     logs/signalfx:
       receivers:
-
       - signalfx
-      processors:
 
+      processors:
       - memory_limiter
       - batch
       
       exporters:
       - signalfx
+
+    logs/entities:
+      receivers: [routing/logs]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/entities]
+
+    logs/split:
+      receivers: [otlp]
+      exporters: [routing/logs]

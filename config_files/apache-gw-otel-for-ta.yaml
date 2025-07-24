@@ -1,13 +1,19 @@
 extensions:
+  headers_setter:
+    headers:
+      - action: upsert
+        key: X-SF-TOKEN
+        from_context: X-SF-TOKEN
+        default_value: "${SPLUNK_ACCESS_TOKEN}"
   health_check:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
-  
+
   http_forwarder:
     ingress:
       endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6060"
     egress:
       endpoint: "${env:SPLUNK_GATEWAY_URL}"
-  
+
   smartagent:
     bundleDir: "${env:SPLUNK_BUNDLE_DIR}"
     collectd:
@@ -36,7 +42,7 @@ receivers:
       processes:
       # System processes metrics, disabled by default
       # process:
-  
+
   jaeger:
     protocols:
       grpc:
@@ -47,14 +53,18 @@ receivers:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:6831"
       thrift_http:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:14268"
-  
+
   otlp:
     protocols:
       grpc:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4317"
+        # Uncomment below config to preserve incoming access token and use it instead of the token value set in exporter config
+        # include_metadata: true
       http:
         endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:4318"
-  
+        # Uncomment below config to preserve incoming access token and use it instead of the token value set in exporter config
+        # include_metadata: true
+
   # This section is used to collect the OpenTelemetry Collector metrics
   # Even if just a Splunk APM customer, these metrics are included
   prometheus/internal:
@@ -80,7 +90,7 @@ receivers:
     # Whether to preserve incoming access token and use instead of exporter token
     # default = false
     #access_token_passthrough: true
-  
+
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
@@ -161,16 +171,13 @@ exporters:
     verbosity: detailed
 
 service:
-  telemetry:
-    metrics:
-      address: "${env:SPLUNK_LISTEN_INTERFACE}:8888"
-  
   extensions:
+  - headers_setter
   - health_check
   - http_forwarder
   - zpages
   - smartagent
-  
+
   pipelines:
     traces:
       receivers: 
