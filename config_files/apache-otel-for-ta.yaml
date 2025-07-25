@@ -98,19 +98,6 @@ receivers:
     endpoint: "http://localhost/server-status?auto"
     collection_interval: 10s
 
-  # Note Default Apache Dashboards are built for smartagent/apache and not OTel Apache so will
-  # not show any metrics when using Auto Discovery as of Jan 2025
-  smartagent/apache:
-    type: collectd/apache
-    host: localhost
-    port: 80
-    url: "http://{{.Host}}:{{.Port}}/server-status?auto"
-  
-  smartagent/processes:
-    type: collectd/processes
-    processes:
-      - apache2
-
 processors:
   batch:
     metadata_keys:
@@ -200,8 +187,6 @@ service:
       - otlp
       - signalfx
       - apache
-      - smartagent/apache
-      - smartagent/processes
 
       processors:
       - memory_limiter

@@ -37,6 +37,7 @@ receivers:
       processes:
       # System processes metrics, disabled by default
       # process:
+
   jaeger:
     protocols:
       grpc:
@@ -67,7 +68,7 @@ receivers:
       - job_name: 'otel-collector'
         scrape_interval: 10s
         static_configs:
-        - targets: ['0.0.0.0:8888']
+        - targets: ["0.0.0.0:8888"]
         metric_relabel_configs:
           - source_labels: [ __name__ ]
             regex: 'promhttp_metric_handler_errors.*'
@@ -157,25 +158,8 @@ exporters:
     sync_host_metadata: true
 
   # Debug
-  #debug:
-    #verbosity: detailed
-
-  # To send entities (applicable only if discovery mode is enabled)
-  otlphttp/entities:
-    logs_endpoint: "${SPLUNK_INGEST_URL}/v3/event"
-    headers:
-      "X-SF-Token": "${SPLUNK_ACCESS_TOKEN}"
-    auth:
-      authenticator: headers_setter
-
-connectors:
-  # Routing connector to separate entity events from regular logs
-  routing/logs:
-    default_pipelines: [logs]
-    table:
-      - context: log
-        condition: instrumentation_scope.attributes["otel.entity.event_as_log"] == true
-        pipelines: [logs/entities]
+  debug:
+    verbosity: detailed
 
 service:
   extensions:
@@ -224,7 +208,7 @@ service:
       - resource/telemetry
 
       exporters:
-      - signalfx
+      - signalfx/internal
 
     logs/signalfx:
       receivers:
@@ -236,12 +220,3 @@ service:
       
       exporters:
       - signalfx
-
-    logs/entities:
-      receivers: [routing/logs]
-      processors: [memory_limiter, batch]
-      exporters: [otlphttp/entities]
-
-    logs/split:
-      receivers: [otlp]
-      exporters: [routing/logs]
