@@ -94,19 +94,19 @@ receivers:
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
-  smartagent/mysql:
-    type: collectd/mysql
-    host: 127.0.0.1
-    port: 3306
-    databases:
-      - name:
-    username: "${env:MYSQL_USER}"
-    password: "${env:MYSQL_PWD}"
+  # smartagent/mysql:
+  #   type: collectd/mysql
+  #   host: 127.0.0.1
+  #   port: 3306
+  #   databases:
+  #     - name:
+  #   username: "${env:MYSQL_USER}"
+  #   password: "${env:MYSQL_PWD}"
 
-  smartagent/processes:
-    type: collectd/processes
-    processes:
-      - mysql
+  # smartagent/processes:
+  #   type: collectd/processes
+  #   processes:
+  #     - mysql
 
   mysql:
     endpoint: localhost:3306
@@ -170,7 +170,9 @@ exporters:
     traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
     headers:
       "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
-
+    auth:
+      authenticator: headers_setter
+  
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
@@ -213,8 +215,8 @@ service:
       - hostmetrics
       - otlp
       - signalfx
-      - smartagent/mysql
-      - smartagent/processes
+      # - smartagent/mysql
+      # - smartagent/processes
       - mysql
 
       processors:
@@ -225,7 +227,7 @@ service:
       exporters:
       - signalfx
 
-    metrics/internal:
+    metrics/telemetry:
       receivers:
       - prometheus/internal
 

@@ -122,7 +122,7 @@ processors:
     detectors: [system]
     override: true
 
-  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and
+  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 
   # traces when it's not populated by instrumentation libraries.
   # If enabled, make sure to enable this processor in a pipeline.
   # For more information, see https://docs.splunk.com/Observability/gdi/opentelemetry/components/resource-processor.html
@@ -200,7 +200,7 @@ service:
       exporters:
       - otlp
 
-    metrics/internal:
+    metrics/telemetry:
       receivers:
       - prometheus/internal
 
@@ -234,5 +234,3 @@ service:
       - resourcedetection
       #- resource/add_environment
       exporters: [otlp]
-
-      

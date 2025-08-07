@@ -5,6 +5,7 @@ extensions:
         key: X-SF-TOKEN
         from_context: X-SF-TOKEN
         default_value: "${SPLUNK_ACCESS_TOKEN}"
+
   health_check:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
 
@@ -94,19 +95,19 @@ receivers:
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
 
-  smartagent/mysql:
-    type: collectd/mysql
-    host: 127.0.0.1
-    port: 3306
-    databases:
-      - name:
-    username: "${env:MYSQL_USER}"
-    password: "${env:MYSQL_PWD}"
+  # smartagent/mysql:
+  #   type: collectd/mysql
+  #   host: 127.0.0.1
+  #   port: 3306
+  #   databases:
+  #     - name:
+  #   username: "${env:MYSQL_USER}"
+  #   password: "${env:MYSQL_PWD}"
 
-  smartagent/processes:
-    type: collectd/processes
-    processes:
-      - mysql
+  # smartagent/processes:
+  #   type: collectd/processes
+  #   processes:
+  #     - mysql
 
   mysql:
     endpoint: localhost:3306
@@ -162,8 +163,8 @@ processors:
   resource/telemetry:
     attributes:
       - action: insert
-        key: splunk.distribution
         value: otel-ta-gateway-agent
+        key: splunk.distribution
 
 exporters:
   # Metrics + Events
@@ -175,10 +176,12 @@ exporters:
     correlation:
 
   # Send to gateway
-  otlp/gateway:
+  otlp:
     endpoint: "${env:SPLUNK_GATEWAY_URL}:4317"
     tls:
       insecure: true
+    auth:
+      authenticator: headers_setter
 
   # Debug
   debug:
@@ -206,7 +209,7 @@ service:
       #- resource/add_environment
 
       exporters: 
-      - otlp/gateway
+      - otlp
       - signalfx
 
     metrics:
@@ -214,8 +217,8 @@ service:
       - hostmetrics
       - otlp
       - signalfx
-      - smartagent/mysql
-      - smartagent/processes
+      # - smartagent/mysql
+      # - smartagent/processes
       - mysql
 
       processors:
@@ -224,9 +227,9 @@ service:
       - resourcedetection
 
       exporters:
-      - otlp/gateway
+      - otlp
 
-    metrics/internal:
+    metrics/telemetry:
       receivers:
       - prometheus/internal
 
@@ -251,3 +254,12 @@ service:
 
       exporters:
       - signalfx
+
+    logs:
+      receivers: [otlp]
+      processors:
+      - memory_limiter
+      - batch
+      - resourcedetection
+      #- resource/add_environment
+      exporters: [otlp]

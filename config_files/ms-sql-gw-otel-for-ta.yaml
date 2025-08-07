@@ -5,6 +5,7 @@ extensions:
         key: X-SF-TOKEN
         from_context: X-SF-TOKEN
         default_value: "${SPLUNK_ACCESS_TOKEN}"
+
   health_check:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:13133"
 
@@ -189,8 +190,8 @@ processors:
   resource/telemetry:
     attributes:
       - action: insert
-        key: splunk.distribution
         value: otel-ta-gateway-agent
+        key: splunk.distribution
 
 exporters:
   # Metrics + Events
@@ -202,10 +203,12 @@ exporters:
     correlation:
 
   # Send to gateway
-  otlp/gateway:
+  otlp:
     endpoint: "${env:SPLUNK_GATEWAY_URL}:4317"
     tls:
       insecure: true
+    auth:
+      authenticator: headers_setter
 
   # Debug
   debug:
@@ -233,7 +236,7 @@ service:
       #- resource/add_environment
 
       exporters: 
-      - otlp/gateway
+      - otlp
       - signalfx
 
     metrics:
@@ -253,9 +256,9 @@ service:
       - resourcedetection
 
       exporters:
-      - otlp/gateway
+      - otlp
 
-    metrics/internal:
+    metrics/telemetry:
       receivers:
       - prometheus/internal
 
@@ -280,3 +283,12 @@ service:
 
       exporters:
       - signalfx
+
+    logs:
+      receivers: [otlp]
+      processors:
+      - memory_limiter
+      - batch
+      - resourcedetection
+      #- resource/add_environment
+      exporters: [otlp]

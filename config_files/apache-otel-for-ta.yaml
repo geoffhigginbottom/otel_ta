@@ -143,7 +143,9 @@ exporters:
     traces_endpoint: "${env:SPLUNK_INGEST_URL}/v2/trace/otlp"
     headers:
       "X-SF-Token": "${env:SPLUNK_ACCESS_TOKEN}"
-
+    auth:
+      authenticator: headers_setter
+  
   # Metrics + Events
   signalfx:
     access_token: "${env:SPLUNK_ACCESS_TOKEN}"
@@ -196,7 +198,7 @@ service:
       exporters:
       - signalfx
 
-    metrics/internal:
+    metrics/telemetry:
       receivers:
       - prometheus/internal
 

@@ -5,8 +5,8 @@
 
 ## Instance Quantities ##
 mysql_count         = "1"
-ms_sql_count        = "1"
 apache_web_count    = "1"
+ms_sql_count        = "1"
 rocky_count         = "0" # slow to deploy so deploy the rest first, then add this is if required and re-run, it will be added
 
 # Optional: deploy a Gateway node and nodes that use the Gateway to send data to O11Y
@@ -52,10 +52,10 @@ universalforwarder_filename             = "splunkforwarder-9.4.1-e3bdab203ac8-li
 universalforwarder_filename_rpm         = "splunkforwarder-9.4.1-e3bdab203ac8.x86_64.rpm"
 windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.4.1/windows/splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
 windows_universalforwarder_filename     = "splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
-splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_1H_2025.xml" # https://splunk.atlassian.net/wiki/spaces/PROD/pages/313538952312/Internal+NFR+License+Keys
+splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_CY2025_2H.License" # https://splunk.atlassian.net/wiki/spaces/PROD/pages/313538952312/Internal+NFR+License+Keys
 splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_920.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
-splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_140.tgz"
+splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_144.tgz"
 config_explorer_filename                = "config-explorer_1716.tgz"
 
 ### Certificate Vars ###
