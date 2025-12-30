@@ -21,12 +21,11 @@ extensions:
       configDir: "${env:SPLUNK_COLLECTD_DIR}"
   
   zpages:
-    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
+    # endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
+    expvar:
+      enabled: true
 
 receivers:
-  # fluentforward:
-    # endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:8006"
-  
   hostmetrics:
     collection_interval: 10s
     scrapers:
@@ -85,29 +84,9 @@ receivers:
 
   smartagent/processlist:
     type: processlist
-  
-  signalfx:
-    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9943"
-    # Whether to preserve incoming access token and use instead of exporter token
-    # default = false
-    #access_token_passthrough: true
 
   zipkin:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9411"
-
-  # smartagent/mysql:
-  #   type: collectd/mysql
-  #   host: 127.0.0.1
-  #   port: 3306
-  #   databases:
-  #     - name:
-  #   username: "${env:MYSQL_USER}"
-  #   password: "${env:MYSQL_PWD}"
-
-  # smartagent/processes:
-  #   type: collectd/processes
-  #   processes:
-  #     - mysql
 
   mysql:
     endpoint: localhost:3306
@@ -149,7 +128,7 @@ processors:
     detectors: [system]
     override: true
 
-  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and 
+  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and
   # traces when it's not populated by instrumentation libraries.
   # If enabled, make sure to enable this processor in a pipeline.
   # For more information, see https://docs.splunk.com/Observability/gdi/opentelemetry/components/resource-processor.html
@@ -163,8 +142,8 @@ processors:
   resource/telemetry:
     attributes:
       - action: insert
-        value: otel-ta-gateway-agent
         key: splunk.distribution
+        value: otel-ta-gateway-agent
 
 exporters:
   # Metrics + Events
@@ -176,7 +155,7 @@ exporters:
     correlation:
 
   # Send to gateway
-  otlp:
+  otlp/gateway:
     endpoint: "${env:SPLUNK_GATEWAY_URL}:4317"
     tls:
       insecure: true
@@ -188,6 +167,11 @@ exporters:
     verbosity: detailed
 
 service:
+  telemetry:
+    logs:
+      level: error
+      output_paths: [ "${env:SPLUNK_HOME}/var/log/splunk/otel.log" ]
+      
   extensions:
   - headers_setter
   - health_check
@@ -209,16 +193,13 @@ service:
       #- resource/add_environment
 
       exporters: 
-      - otlp
+      - otlp/gateway
       - signalfx
 
     metrics:
       receivers:
       - hostmetrics
       - otlp
-      - signalfx
-      # - smartagent/mysql
-      # - smartagent/processes
       - mysql
 
       processors:
@@ -227,7 +208,7 @@ service:
       - resourcedetection
 
       exporters:
-      - otlp
+      - otlp/gateway
 
     metrics/telemetry:
       receivers:
@@ -238,13 +219,14 @@ service:
       - batch
       - resourcedetection
       - resource/telemetry
-
+      
+      # When sending to gateway, at least one metrics pipeline needs
+      # to use signalfx exporter so host metadata gets emitted
       exporters:
       - signalfx
 
     logs/signalfx:
       receivers:
-      - signalfx
       - smartagent/processlist
 
       processors:
@@ -254,12 +236,3 @@ service:
 
       exporters:
       - signalfx
-
-    logs:
-      receivers: [otlp]
-      processors:
-      - memory_limiter
-      - batch
-      - resourcedetection
-      #- resource/add_environment
-      exporters: [otlp]

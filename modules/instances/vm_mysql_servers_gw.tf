@@ -7,6 +7,19 @@ resource "aws_instance" "mysqlgw" {
   vpc_security_group_ids    = [aws_security_group.instances_sg.id]
   iam_instance_profile      = var.ec2_instance_profile_name
 
+  root_block_device {
+    volume_size = 16
+    volume_type = "gp3"
+    encrypted   = true
+    delete_on_termination = true
+
+    tags = {
+      Name                          = lower(join("-", [var.environment, "mysql-gw", count.index + 1, "root"]))
+      splunkit_environment_type     = "non-prd"
+      splunkit_data_classification  = "private"
+    }
+  }
+
   tags = {
     Name = lower(join("-",[var.environment, "mysql-gw", count.index + 1]))
     Environment = lower(var.environment)
@@ -43,7 +56,7 @@ resource "aws_instance" "mysqlgw" {
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/mysqld.cnf /tmp/mysqld.cnf",
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/mysql_loadgen.service /tmp/mysql_loadgen.service",
 
-      "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.universalforwarder_filename} /tmp/${var.universalforwarder_filename}",
+      # "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.universalforwarder_filename} /tmp/${var.universalforwarder_filename}",
 
     ## Install MySQL
       "sudo chmod +x /tmp/install_mysql.sh",
@@ -76,8 +89,9 @@ resource "aws_instance" "mysqlgw" {
 
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
+      "UNIVERSAL_FORWARDER_VERSION=${var.universalforwarder_version}",
       "PASSWORD=${var.splunk_admin_pwd}",
-      var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}",
       "PRIVATE_DNS=${self.private_dns}",
       "HOSTNAME=${self.tags.Name}.local",
 
@@ -89,7 +103,7 @@ resource "aws_instance" "mysqlgw" {
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $PASSWORD $SPLUNK_IP $HOSTNAME" : "echo skipping",
+      "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_VERSION $PASSWORD $SPLUNK_IP $PRIVATE_DNS",
 
     ## Run MySQL Loadgen Script
       "sudo systemctl daemon-reload",

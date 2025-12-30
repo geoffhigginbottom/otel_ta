@@ -18,7 +18,7 @@ output "splunk_ent_url" {
     "%s%s:%s", 
     "http://",
     aws_eip_association.eip_assoc.*.public_ip,
-    "8000",
+    "80",
   )
 }
 
@@ -27,6 +27,6 @@ output "splunk_ent_url_fqdn" {
     "%s%s:%s", 
     "http://",
     var.fqdn,
-    "8000",
+    "80",
   )
 }

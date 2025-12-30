@@ -1,4 +1,4 @@
-# Configuration file that uses the Splunk exporters (SAPM, SignalFx) to push
+# Configuration file that uses the Splunk exporters (OTLP HTTP, SignalFx) to push
 # data to Splunk products.
 
 extensions:
@@ -19,6 +19,8 @@ extensions:
 
   zpages:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:55679"
+    expvar:
+      enabled: true
 
 receivers:
   hostmetrics:
@@ -76,12 +78,6 @@ receivers:
           - source_labels: [ __name__ ]
             regex: 'otelcol_processor_batch_.*'
             action: drop
-
-  sapm:
-    endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:7276"
-    # Whether to preserve incoming access token and use instead of exporter token
-    # default = false
-    #access_token_passthrough: true
 
   signalfx:
     endpoint: "${env:SPLUNK_LISTEN_INTERFACE}:9943"
@@ -162,6 +158,11 @@ exporters:
     verbosity: detailed
 
 service:
+  telemetry:
+    logs:
+      level: error
+      output_paths: [ "${env:SPLUNK_HOME}/var/log/splunk/otel.log" ]
+
   extensions:
   - headers_setter
   - health_check
@@ -173,7 +174,6 @@ service:
       receivers:
       - jaeger
       - otlp
-      - sapm
       - zipkin
 
       processors:

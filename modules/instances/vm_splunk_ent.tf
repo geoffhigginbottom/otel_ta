@@ -16,21 +16,30 @@ resource "aws_instance" "splunk_ent" {
   instance_type             = var.splunk_ent_inst_type
   subnet_id                 = "${var.public_subnet_ids[ count.index % length(var.public_subnet_ids) ]}"
   private_ip                = var.splunk_private_ip
-  root_block_device {
-    volume_size = 32
-    volume_type = "gp2"
-  }
   key_name                  = var.key_name
   vpc_security_group_ids    = [
     aws_security_group.splunk_ent_sg.id,
   ]
   iam_instance_profile      = var.ec2_instance_profile_name
 
+  root_block_device {
+    volume_size = 32
+    volume_type = "gp3"
+    encrypted   = true
+    delete_on_termination = true
+
+    tags = {
+      Name                          = lower(join("-", [var.environment, "splunk-ent", "root"]))
+      splunkit_environment_type     = "non-prd"
+      splunkit_data_classification  = "private"
+    }
+  }
+
   tags = {
     Name = lower(join("-",[var.environment, "splunk-ent", count.index + 1]))
     Environment = lower(var.environment)
     splunkit_environment_type = "non-prd"
-    splunkit_data_classification = "public"
+    splunkit_data_classification = "private"
   }
 
   provisioner "remote-exec" {
@@ -71,7 +80,7 @@ resource "aws_instance" "splunk_ent" {
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/gateway_config.yaml /tmp/gateway_config.yaml",
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/inputs.conf.spec /tmp/inputs.conf.spec",
 
-      "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_ent_filename} /tmp/${var.splunk_ent_filename}",
+      # "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_ent_filename} /tmp/${var.splunk_ent_filename}",
       "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_enterprise_license_filename} /tmp/${var.splunk_enterprise_license_filename}",
       "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_enterprise_ta_linux_filename} /tmp/${var.splunk_enterprise_ta_linux_filename}",
       "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_ta_otel_filename} /tmp/${var.splunk_ta_otel_filename}",

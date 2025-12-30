@@ -26,6 +26,11 @@
   variable "org" {
     default = []
   }
+  variable "insecure_sg_rules" {
+    description = "Set to true to allow access from 0.0.0.0/0, false to restrict to my_public_ip."
+    type        = bool
+    default     = false # Set a default value, e.g., false for more secure
+  }
 
 ### AWS Variables ###
   variable "profile" {
@@ -134,14 +139,14 @@
   ## Rocky AMI ##
   data "aws_ami" "rocky" {
     most_recent = true
-    owners      = ["679593333241"]
-    # owners      = ["792107900819"]
+    # owners      = ["679593333241"]
+    owners      = ["792107900819"]
     
 
     filter {
       name   = "name"
-      values = ["Rocky-8-EC2-Base-8.9-*"]
-      # values = ["Rocky-9-EC2-Base-9.5-*"]
+      # values = ["Rocky-8-EC2-Base-8.9-*"]
+      values = ["Rocky-9-EC2-Base-9.5-*"]
     }
 
     filter {
@@ -289,6 +294,9 @@
     default = {}
   }
   variable "splunk_ent_inst_type" {
+    default = {}
+  }
+  variable "universalforwarder_version" {
     default = {}
   }
   variable "universalforwarder_filename" {

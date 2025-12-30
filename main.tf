@@ -3,6 +3,12 @@ provider "aws" {
   region     = lookup(var.aws_region, var.region)
   access_key = var.aws_access_key_id
   secret_key = var.aws_secret_access_key
+  default_tags {
+    tags = {
+      splunkit_environment_type     = "non-prd"
+      splunkit_data_classification  = "private"
+    }
+  }
 }
 
 provider "signalfx" {
@@ -46,6 +52,7 @@ module "instances" {
   public_subnet_ids                     = module.vpc.public_subnet_ids
   key_name                              = var.key_name
   private_key_path                      = var.private_key_path
+  insecure_sg_rules                     = var.insecure_sg_rules
   ec2_instance_profile_name             = module.s3.ec2_instance_profile_name
   s3_bucket_name                        = var.s3_bucket_name
   instance_type                         = var.instance_type
@@ -92,6 +99,7 @@ module "instances" {
   splunk_ent_inst_type                  = var.splunk_ent_inst_type
   splunk_cloud_uf_filename              = var.splunk_cloud_uf_filename
   config_explorer_filename              = var.config_explorer_filename
+  universalforwarder_version            = var.universalforwarder_version
   universalforwarder_filename           = var.universalforwarder_filename
   universalforwarder_filename_rpm       = var.universalforwarder_filename_rpm
   windows_universalforwarder_filename   = var.windows_universalforwarder_filename

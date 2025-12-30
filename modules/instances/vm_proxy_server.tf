@@ -8,6 +8,19 @@ resource "aws_instance" "proxy_server" {
   vpc_security_group_ids    = [aws_security_group.proxy_server.id]
   iam_instance_profile      = var.ec2_instance_profile_name
 
+  root_block_device {
+    volume_size = 16
+    volume_type = "gp3"
+    encrypted   = true
+    delete_on_termination = true
+
+    tags = {
+      Name                          = lower(join("-", [var.environment, "proxy-server", count.index + 1, "root"]))
+      splunkit_environment_type     = "non-prd"
+      splunkit_data_classification  = "private"
+    }
+  }
+
   tags = {
     Name = lower(join("-",[var.environment, "proxy-server", count.index + 1]))
     Environment = lower(var.environment)
@@ -38,7 +51,7 @@ resource "aws_instance" "proxy_server" {
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/squid.conf /tmp/squid.conf",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/install_splunk_universal_forwarder.sh /tmp/install_splunk_universal_forwarder.sh",
 
-      "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.universalforwarder_filename} /tmp/${var.universalforwarder_filename}",
+      # "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.universalforwarder_filename} /tmp/${var.universalforwarder_filename}",
 
     ## Install Proxy Server
       "sudo apt-get install squid -y",
@@ -48,8 +61,9 @@ resource "aws_instance" "proxy_server" {
 
     ## Generate Vars
       "UNIVERSAL_FORWARDER_FILENAME=${var.universalforwarder_filename}",
+      "UNIVERSAL_FORWARDER_VERSION=${var.universalforwarder_version}",
       "PASSWORD=${var.splunk_admin_pwd}",
-      var.splunk_ent_count == "1" ? "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}" : "echo skipping",
+      "SPLUNK_IP=${aws_instance.splunk_ent.0.private_ip}",
       "PRIVATE_DNS=${self.private_dns}",
 
     ## Write env vars to file (used for debugging)
@@ -60,7 +74,7 @@ resource "aws_instance" "proxy_server" {
 
     ## Install Splunk Universal Forwarder
       "sudo chmod +x /tmp/install_splunk_universal_forwarder.sh",
-      var.splunk_ent_count == "1" ? "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $PASSWORD $SPLUNK_IP $PRIVATE_DNS" : "echo skipping",
+      "/tmp/install_splunk_universal_forwarder.sh $UNIVERSAL_FORWARDER_FILENAME $UNIVERSAL_FORWARDER_VERSION $PASSWORD $SPLUNK_IP $PRIVATE_DNS",
     ]
   }
 

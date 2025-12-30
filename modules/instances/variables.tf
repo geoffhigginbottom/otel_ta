@@ -82,6 +82,9 @@ variable "ec2_instance_profile_name" {
 variable "s3_bucket_name" {
   default = {}
 }
+variable "insecure_sg_rules" {
+  type    = bool
+}
 
 ### Instance Count Variables ###
 variable "mysql_count" {
@@ -105,7 +108,6 @@ variable "windows_server_count" {
 variable "splunk_ent_count" {
   default = {}
 }
-
 variable "gateway_count" {
   default = {}
 }
@@ -124,15 +126,12 @@ variable "apache_web_gw_count" {
 variable "ms_sql_gw_count" {
   default = {}
 }
-
-
 variable "proxy_server_count" {
   default = {}
 }
 variable "proxied_apache_web_count" {
   default = {}
 }
-
 
 ### MySql Variables ###
 variable "mysql_user" {
@@ -188,6 +187,9 @@ variable "splunk_ent_filename" {
   default = {}
 }
 variable "splunk_ent_inst_type" {
+  default = {}
+}
+variable "universalforwarder_version" {
   default = {}
 }
 variable "universalforwarder_filename" {

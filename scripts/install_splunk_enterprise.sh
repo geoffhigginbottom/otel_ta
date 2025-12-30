@@ -7,7 +7,7 @@ FILENAME=$3
 LO_CONNECT_PASSWORD=$4
 
 # wget -O /tmp/$FILENAME "https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture=x86_64&platform=linux&version=$VERSION&product=splunk&filename=$FILENAME&wget=true"
-# wget -O /tmp/$FILENAME "https://download.splunk.com/products/splunk/releases/$VERSION/linux/$FILENAME"
+wget -O /tmp/$FILENAME "https://download.splunk.com/products/splunk/releases/$VERSION/linux/$FILENAME"
 dpkg -i /tmp/$FILENAME
 /opt/splunk/bin/splunk cmd splunkd rest --noauth POST /services/authentication/users "name=admin&password=$PASSWORD&roles=admin"
 /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt --seed-passwd $PASSWORD
@@ -41,6 +41,9 @@ curl -k -u admin:$PASSWORD https://localhost:8089/services/admin/roles \
 /opt/splunk/bin/splunk add index apache2 -auth admin:$PASSWORD
 /opt/splunk/bin/splunk add index httpd -auth admin:$PASSWORD
 /opt/splunk/bin/splunk add index mysql -auth admin:$PASSWORD
+
+#Change webport to 8000 to avoid conflict with Splunk Offices WiFi Restrictons
+/opt/splunk/bin/splunk set web-port 80
 
 #Enable HEC
 /opt/splunk/bin/splunk http-event-collector enable -uri https://localhost:8089 -enable-ssl 0 -port 8088 -auth admin:$PASSWORD
