@@ -15,6 +15,9 @@ mysql_gw_count       = "0"
 apache_web_gw_count  = "0"
 ms_sql_gw_count      = "0"
 
+# New for 3.0.0 - Allow insecure security group rules
+insecure_sg_rules    = true # Set to true to allow access from 0.0.0.0/0, false to restrict to your current public ip - leave as false unless absolutley necessary
+
 ### AWS Variables ###
 region = "2" # also need to change EIP setting below
 
@@ -44,19 +47,21 @@ environment                      = "otel-ta-testing"
 splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
 gw_private_ip                           = "172.32.2.100"
+proxy_server_private_ip                 = "172.32.2.200"
 eip                                     = "nn.nn.nn.nn" #ensure this aligns with region setting above
-splunk_ent_filename                     = "splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
-splunk_ent_version                      = "9.4.1"
+splunk_ent_filename                     = "splunk-10.0.2-e2d18b4767e9-linux-amd64.deb"
+splunk_ent_version                      = "10.0.2"
 splunk_ent_inst_type                    = "t2.2xlarge"
-universalforwarder_filename             = "splunkforwarder-9.4.1-e3bdab203ac8-linux-amd64.deb"
-universalforwarder_filename_rpm         = "splunkforwarder-9.4.1-e3bdab203ac8.x86_64.rpm"
-windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/9.4.1/windows/splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
-windows_universalforwarder_filename     = "splunkforwarder-9.4.1-e3bdab203ac8-windows-x64.msi"
+universalforwarder_version              = "10.0.2"
+universalforwarder_filename             = "splunkforwarder-10.0.2-e2d18b4767e9-linux-amd64.deb"
+universalforwarder_filename_rpm         = "splunkforwarder-10.0.2-e2d18b4767e9.x86_64.rpm"
+windows_universalforwarder_url          = "https://download.splunk.com/products/universalforwarder/releases/10.0.2/windows/splunkforwarder-10.0.2-e2d18b4767e9-windows-x64.msi"
+windows_universalforwarder_filename     = "splunkforwarder-10.0.2-e2d18b4767e9-windows-x64.msi"
 splunk_enterprise_license_filename      = "Splunk_Enterprise_NFR_CY2025_2H.License" # https://splunk.atlassian.net/wiki/spaces/PROD/pages/313538952312/Internal+NFR+License+Keys
-splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_920.tgz"
+splunk_enterprise_ta_linux_filename     = "splunk-add-on-for-unix-and-linux_1020.tgz"
 splunk_cloud_uf_filename                = "splunkclouduf.spl"
-splunk_ta_otel_filename                 = "splunk-add-on-for-opentelemetry-collector_144.tgz"
-config_explorer_filename                = "config-explorer_1716.tgz"
+splunk_ta_otel_filename                 = "Splunk_TA_otel-1.9.0.tgz"
+config_explorer_filename                = "config-explorer_1821.tgz"
 
 ### Certificate Vars ###
 certpath    = "/opt/splunk/etc/auth/sloccerts"
