@@ -184,7 +184,7 @@ resource "aws_instance" "splunk_ent" {
       "sudo /tmp/update_inputs_conf_spec.sh",
       "sudo /tmp/update_mysql_inputs.sh $MYSQL_USER $MYSQL_USER_PWD",
       "sudo /tmp/update_mysql_inputs_gw.sh $MYSQL_USER $MYSQL_USER_PWD",
-      "sudo /tmp/update_splunk_ta_otel_sh.sh",
+      # "sudo /tmp/update_splunk_ta_otel_sh.sh",
 
       # "sudo /opt/splunk/bin/splunk reload deploy-server -auth admin:${var.splunk_admin_pwd}", # Does this work??? latest edit
 
