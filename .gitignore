@@ -36,6 +36,7 @@ variables.tfvars
 terraform.tfvars
 /non_public_files/
 /default_configs/
+/default_agent_files/
 
 retail*
 lambda.zip
