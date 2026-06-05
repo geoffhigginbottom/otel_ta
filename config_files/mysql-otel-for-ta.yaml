@@ -86,7 +86,9 @@ receivers:
         mute_process_io_error: true
         mute_process_user_error: true
         include:
-          names: ["httpd", "apache2", "mysqld", "mariadbd"]
+          names:
+            - otelcol
+            - mysqld
           match_type: strict
         metrics:
           process.cpu.utilization:
