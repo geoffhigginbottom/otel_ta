@@ -5,6 +5,7 @@ PASSWORD=$1
 ENVIRONMENT=$2
 ACCESSTOKEN=$3
 REALM=$4
+SPLUNK_GATEWAY_URL=$5
 
 ########## Setup Splunk_TA_nix ##########
 /opt/splunk/bin/splunk add index osnixsec -auth admin:$PASSWORD
@@ -28,12 +29,8 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/local/inp
 disabled = true
 start_by_shell=false
 interval = 30
-splunk_api_url=https://api.$REALM.signalfx.com
-splunk_ingest_url=https://ingest.$REALM.signalfx.com
-splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
-splunk_listen_interface=localhost
 splunk_realm=$REALM
-splunk_gateway_url=172.32.2.100
+splunk_gateway_url=$SPLUNK_GATEWAY_URL
 EOF
 
 mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/
@@ -42,12 +39,8 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/i
 disabled = true
 start_by_shell=false
 interval = 30
-splunk_api_url=https://api.$REALM.signalfx.com
-splunk_ingest_url=https://ingest.$REALM.signalfx.com
-splunk_trace_url=https://ingest.$REALM.signalfx.com/v2/trace
-splunk_listen_interface=localhost
 splunk_realm=$REALM
-splunk_gateway_url=172.32.2.100
+splunk_gateway_url=$SPLUNK_GATEWAY_URL
 EOF
 ########## End Setup Splunk_TA_otel_base ##########
 
@@ -57,15 +50,8 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/local/access_token
-# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml
-# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/gateway_config.yaml
-splunk_listen_interface=0.0.0.0
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/access_token
-$ACCESSTOKEN
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/gateway_config.yaml
 EOF
 ########## End Setup Splunk_TA_otel_apps_gateway ##########
 
@@ -75,17 +61,14 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/local/access_token
-# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml
-# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-otel-for-ta.yaml
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/mysql-otel-for-ta.yaml
 
-mysql_user=
-mysql_pwd=
+splunk_collector_env_vars =
 
-[monitor:///var/log/mysql/query.log]
+[monitor:///var/log/mysql/mysql.log]
 index = mysql
-sourcetype = mysql:generalQueryLog
+sourcetype = mysql:generalLog
 disabled = 0
 
 [monitor:///var/log/mysql/mysql-slow.log]
@@ -97,10 +80,6 @@ disabled = 0
 index = mysql
 sourcetype = mysql:errorLog
 disabled = 0
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/access_token
-$ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_mysql ##########
 
@@ -108,17 +87,14 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/local/access_token
-# splunk_access_token_file=\$SPLUNK_OTEL_TA_HOME/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml
-# splunk_config=\$SPLUNK_OTEL_TA_HOME/configs/mysql-gw-otel-for-ta.yaml
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/mysql-gw-otel-for-ta.yaml
 
-mysql_user=
-mysql_pwd=
+splunk_collector_env_vars =
 
-[monitor:///var/log/mysql/query.log]
+[monitor:///var/log/mysql/mysql.log]
 index = mysql
-sourcetype = mysql:generalQueryLog
+sourcetype = mysql:generalLog
 disabled = 0
 
 [monitor:///var/log/mysql/mysql-slow.log]
@@ -131,18 +107,14 @@ index = mysql
 sourcetype = mysql:errorLog
 disabled = 0
 EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local/access_token
-$ACCESSTOKEN
-EOF
 ########## End Setup Splunk_TA_otel_apps_mysql_gw ##########
 
 ########## Setup Splunk_TA_otel_apps_apache ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/apache-otel-for-ta.yaml
 discovery=true
 
 [monitor:///var/log/apache2]
@@ -150,27 +122,19 @@ index=apache2
 sourcetype = access_combined
 disabled = 0
 EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/access_token
-$ACCESSTOKEN
-EOF
 ########## End Setup Splunk_TA_otel_apps_apache ##########
 
 ########## Setup Splunk_TA_otel_apps_apache_gw ##########
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache_gw/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/apache-gw-otel-for-ta.yaml
 
 [monitor:///var/log/apache2]
 index=apache2
 sourcetype = access_combined
 disabled = 0
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local/access_token
-$ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_apache_gw ##########
 
@@ -181,17 +145,13 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_rocky/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_rocky/configs/rocky-otel-for-ta.yaml
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/rocky-otel-for-ta.yaml
 
 [monitor:///var/log/httpd]
 index=httpd
 sourcetype = access_combined
 disabled = 0
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/local/access_token
-$ACCESSTOKEN
 EOF
 ########## End Setup Splunk_TA_otel_apps_rocky ##########
 
@@ -201,12 +161,8 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql/configs/ms-sql-otel-for-ta.yaml
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/access_token
-$ACCESSTOKEN
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/ms-sql-otel-for-ta.yaml
 EOF
 ########## End Setup Splunk_TA_otel_apps_ms_sql ##########
 
@@ -216,12 +172,8 @@ EOF
 cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/local/inputs.conf
 [Splunk_TA_otel://Splunk_TA_otel]
 disabled=false
-splunk_access_token_file=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql_gw/local/access_token
-splunk_config=\$SPLUNK_HOME/etc/apps/Splunk_TA_otel_apps_ms_sql_gw/configs/ms-sql-gw-otel-for-ta.yaml
-EOF
-
-cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/local/access_token
-$ACCESSTOKEN
+splunk_access_token=$ACCESSTOKEN
+splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/ms-sql-gw-otel-for-ta.yaml
 EOF
 ########## End Setup Splunk_TA_otel_apps_ms_sql_gw ##########
 

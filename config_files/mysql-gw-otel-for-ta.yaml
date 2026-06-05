@@ -81,7 +81,20 @@ receivers:
       # Aggregated system process count metrics
       processes:
       # System processes metrics, disabled by default
-      # process:
+      process:
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+        include:
+          names:
+            - otelcol
+            - mysqld
+          match_type: strict
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
 
   jaeger:
     protocols:
@@ -132,8 +145,8 @@ receivers:
 
   mysql:
     endpoint: localhost:3306
-    username: "${MYSQL_USER}"
-    password: "${MYSQL_PWD}"
+    username: "${env:MYSQL_USERNAME}"
+    password: "${env:MYSQL_PASSWORD}"
     collection_interval: 10s
     initial_delay: 1s
     statement_events:
@@ -237,7 +250,9 @@ exporters:
 service:
   telemetry:
     logs:
-      level: ${SPLUNK_COLLECTOR_LOG_LEVEL:-info}
+      level: ${env:SPLUNK_COLLECTOR_LOG_LEVEL:-info}
+      output_paths:
+        - ${env:SPLUNK_HOME}/var/log/splunk/otel.log 
     # Resource attributes attached to the Collector's internal telemetry. These
     # are also exposed via OpAMP when the opamp/splunk_o11y extension is enabled
     # with agent_description.include_resource_attributes set to true.
@@ -284,7 +299,7 @@ service:
 
     metrics:
       receivers:
-      - hostmetrics
+      - host_metrics
       - otlp
       - mysql
 
@@ -299,7 +314,7 @@ service:
       exporters:
       - otlp_grpc/gateway
 
-    metrics/telemetry:
+    metrics/internal:
       receivers:
       - prometheus/internal
 

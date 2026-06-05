@@ -288,7 +288,9 @@ exporters:
 service:
   telemetry:
     logs:
-      level: ${SPLUNK_COLLECTOR_LOG_LEVEL:-info}
+      level: ${env:SPLUNK_COLLECTOR_LOG_LEVEL:-info}
+      output_paths:
+        - ${env:SPLUNK_HOME}/var/log/splunk/otel.log 
     # Resource attributes attached to the Collector's internal telemetry. These
     # are also exposed via OpAMP when the opamp/splunk_o11y extension is enabled
     # with agent_description.include_resource_attributes set to true.
@@ -335,7 +337,7 @@ service:
 
     metrics:
       receivers:
-      - hostmetrics
+      - host_metrics
       - otlp
       - sqlserver
       - smartagent/sqlserver
@@ -355,7 +357,7 @@ service:
       exporters:
       - otlp_grpc/gateway
 
-    metrics/telemetry:
+    metrics/internal:
       receivers:
       - prometheus/internal
 
