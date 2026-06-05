@@ -310,7 +310,7 @@ service:
   - headers_setter
   - health_check
   - http_forwarder
-  - http_forwarder/opamp_splunk_o11y
+  # - http_forwarder/opamp_splunk_o11y
   - opamp/splunk_o11y
   - zpages
   - smartagent
