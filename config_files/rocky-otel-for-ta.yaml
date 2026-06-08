@@ -225,7 +225,7 @@ service:
     logs:
       level: ${env:SPLUNK_COLLECTOR_LOG_LEVEL:-info}
       output_paths:
-        - ${env:SPLUNK_HOME}/var/log/splunk/otel.log 
+        - "${env:SPLUNK_HOME}/var/log/splunk/otel.log"
     # Resource attributes attached to the Collector's internal telemetry. These
     # are also exposed via OpAMP when the opamp/splunk_o11y extension is enabled
     # with agent_description.include_resource_attributes set to true.
