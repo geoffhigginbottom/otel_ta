@@ -81,7 +81,27 @@ receivers:
       # Aggregated system process count metrics
       processes:
       # System processes metrics, disabled by default
-      # process:
+      process:
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+        include:
+          names:
+            - splunkd
+            - Splunk_TA_otel
+          match_type: strict
+        resource_attributes:
+          process.pid:
+            enabled: false
+          process.parent_pid:
+            enabled: false
+          process.command_line:
+            enabled: false
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
 
   jaeger:
     protocols:
