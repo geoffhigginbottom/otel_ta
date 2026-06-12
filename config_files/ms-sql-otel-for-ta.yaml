@@ -28,7 +28,7 @@ extensions:
     egress:
       endpoint: "${SPLUNK_API_URL}"
       # Use instead when sending to gateway
-      #endpoint: "${SPLUNK_GATEWAY_URL}"
+      #endpoint: "http://${SPLUNK_GATEWAY_URL}"
   
   http_forwarder/opamp_splunk_o11y:
     ingress:
@@ -36,7 +36,7 @@ extensions:
     egress:
       endpoint: "${SPLUNK_INGEST_URL}"
       # Use instead when sending to gateway
-      #endpoint: "${SPLUNK_GATEWAY_URL}:4320"
+      #endpoint: "http://${SPLUNK_GATEWAY_URL}:4320"
   
   # opamp/splunk_o11y is included in the default config, but startup removes it
   # from service.extensions unless --feature-gates=+splunk.opamp.enabled is set.
@@ -48,18 +48,18 @@ extensions:
       http:
         endpoint: "${SPLUNK_INGEST_URL}/v1/opamp"
         # Use instead when sending to gateway (assuming the gateway is running http_forwarder/signalfx on port 4320)
-        #endpoint: "${SPLUNK_GATEWAY_URL}:4320/v1/opamp"
+        #endpoint: "http://${SPLUNK_GATEWAY_URL}:4320/v1/opamp"
         polling_interval: 30s
         headers:
           X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
   
   smartagent:
     bundleDir: "${SPLUNK_BUNDLE_DIR}"
-    collectd:
-      configDir: "${SPLUNK_COLLECTD_DIR}"
+    # collectd:
+      # configDir: "${SPLUNK_COLLECTD_DIR}"
   
   zpages:
-    #endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
+    endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
     expvar:
       enabled: true
 
@@ -134,7 +134,7 @@ receivers:
     collection_interval: 5s
     username: ${SPLUNK_SQL_USER}
     password: ${SPLUNK_SQL_USER_PWD}
-    server: 0.0.0.0
+    server: localhost
     port: 1433
     resource_attributes:
       sqlserver.instance.name:
@@ -194,9 +194,9 @@ receivers:
             attributes:
               state: idle
 
-  smartagent/ntp:
-    type: ntp
-    host: pool.ntp.org
+  # smartagent/ntp:
+  #   type: ntp
+  #   host: pool.ntp.org
 
 processors:
   batch:
@@ -340,7 +340,7 @@ service:
       - sqlserver
       - smartagent/sqlserver
       - smartagent/procstat-mssqlserver
-      - smartagent/ntp
+      # - smartagent/ntp
       - windowsperfcounters/memory
       - windowsperfcounters/processor
 
