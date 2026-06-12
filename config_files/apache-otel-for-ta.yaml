@@ -87,10 +87,17 @@ receivers:
         mute_process_user_error: true
         include:
           names:
-            - otelcol
-            - httpd
+            - splunkd
+            - Splunk_TA_otel
             - apache2
           match_type: strict
+        resource_attributes:
+          process.pid:
+            enabled: false
+          process.parent_pid:
+            enabled: false
+          process.command_line:
+            enabled: false
         metrics:
           process.cpu.utilization:
             enabled: true
