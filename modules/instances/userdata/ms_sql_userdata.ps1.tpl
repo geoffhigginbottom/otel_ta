@@ -6,17 +6,70 @@ Get-LocalUser -Name "Administrator" | Set-LocalUser -Password (ConvertTo-SecureS
 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
 # Start-Sleep -Seconds 30  # Wait for the AWS CLI to finish installing
 
-[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO') | out-null
-$s = new-object('Microsoft.SqlServer.Management.Smo.Server') localhost
-$nm = $s.Name
-$mode = $s.Settings.LoginMode
-$s.Settings.LoginMode = [Microsoft.SqlServer.Management.SMO.ServerLoginMode] 'Mixed'
-$s.Alter()
-Restart-Service -Name MSSQLSERVER -f
+$LogFile = 'C:\sql-init.log'
+function Write-SqlInitLog {
+    param([string]$Message)
+    Add-Content -Path $LogFile -Value ("$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') {0}" -f $Message)
+}
 
-Invoke-Sqlcmd -Query "CREATE LOGIN [signalfxagent] WITH PASSWORD = '${ms_sql_user_pwd}';" -ServerInstance localhost
-Invoke-Sqlcmd -Query "GRANT VIEW SERVER STATE TO [${ms_sql_user}];" -ServerInstance localhost
-Invoke-Sqlcmd -Query "GRANT VIEW ANY DEFINITION TO [${ms_sql_user}];" -ServerInstance localhost
+function Wait-SqlServerReady {
+    param([int]$MaxAttempts = 60)
+    for ($i = 1; $i -le $MaxAttempts; $i++) {
+        try {
+            $svc = Get-Service -Name MSSQLSERVER -ErrorAction Stop
+            if ($svc.Status -eq 'Running') {
+                Invoke-Sqlcmd -ServerInstance localhost -Query 'SELECT 1' -ErrorAction Stop | Out-Null
+                return
+            }
+        } catch {}
+        Write-SqlInitLog "Waiting for SQL Server (attempt $i/$MaxAttempts)..."
+        Start-Sleep -Seconds 10
+    }
+    throw "SQL Server did not become ready within $($MaxAttempts * 10) seconds"
+}
+
+try {
+    Write-SqlInitLog 'Starting SQL Server configuration'
+    Wait-SqlServerReady
+
+    Write-SqlInitLog 'Enabling mixed mode authentication via xp_instance_regwrite'
+    Invoke-Sqlcmd -ServerInstance localhost -Query @'
+EXEC xp_instance_regwrite
+    N'HKEY_LOCAL_MACHINE',
+    N'Software\Microsoft\MSSQLServer\MSSQLServer',
+    N'LoginMode',
+    REG_DWORD,
+    2;
+'@
+
+    Restart-Service -Name MSSQLSERVER -Force
+    Start-Sleep -Seconds 15
+    Wait-SqlServerReady -MaxAttempts 30
+
+    $authMode = Invoke-Sqlcmd -ServerInstance localhost -Query "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS WindowsAuthOnly;"
+    Write-SqlInitLog ("Authentication mode check - IsIntegratedSecurityOnly: {0} (0=mixed, 1=Windows only)" -f $authMode.WindowsAuthOnly)
+    if ($authMode.WindowsAuthOnly -eq 1) {
+        throw 'Mixed mode authentication is still disabled after registry update and service restart'
+    }
+
+    Write-SqlInitLog 'Creating login and granting permissions'
+    Invoke-Sqlcmd -ServerInstance localhost -Query @"
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'${ms_sql_user}')
+    CREATE LOGIN [${ms_sql_user}] WITH PASSWORD = N'${ms_sql_user_pwd}', CHECK_POLICY = OFF;
+ELSE
+    ALTER LOGIN [${ms_sql_user}] WITH PASSWORD = N'${ms_sql_user_pwd}', CHECK_POLICY = OFF;
+"@
+    Invoke-Sqlcmd -ServerInstance localhost -Query "GRANT VIEW SERVER STATE TO [${ms_sql_user}];"
+    Invoke-Sqlcmd -ServerInstance localhost -Query "GRANT VIEW SERVER PERFORMANCE STATE TO [${ms_sql_user}];"
+    Invoke-Sqlcmd -ServerInstance localhost -Query "GRANT VIEW ANY DEFINITION TO [${ms_sql_user}];"
+    Invoke-Sqlcmd -ServerInstance localhost -Query "GRANT VIEW ANY DATABASE TO [${ms_sql_user}];"
+
+    Invoke-Sqlcmd -ServerInstance localhost -Username ${ms_sql_user} -Password '${ms_sql_user_pwd}' -Query 'SELECT 1' -ErrorAction Stop | Out-Null
+    Write-SqlInitLog 'SQL login verification succeeded'
+} catch {
+    Write-SqlInitLog ("ERROR: {0}" -f $_)
+    throw
+}
 
 New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment' -Name 'SPLUNK_SQL_USER' -Value "${ms_sql_user}"
 New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment' -Name 'SPLUNK_SQL_USER_PWD' -Value "${ms_sql_user_pwd}"
