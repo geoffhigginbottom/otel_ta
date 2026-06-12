@@ -92,11 +92,11 @@ receivers:
           match_type: strict
         resource_attributes:
           process.pid:
-            enabled: false
+            enabled: true
           process.parent_pid:
-            enabled: false
+            enabled: true
           process.command_line:
-            enabled: false
+            enabled: true
         metrics:
           process.cpu.utilization:
             enabled: true
