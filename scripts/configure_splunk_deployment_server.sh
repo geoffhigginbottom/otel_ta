@@ -31,6 +31,7 @@ start_by_shell=false
 interval = 30
 splunk_realm=$REALM
 splunk_gateway_url=$SPLUNK_GATEWAY_URL
+splunk_collector_log_level = info
 EOF
 
 mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/
@@ -41,6 +42,7 @@ start_by_shell=false
 interval = 30
 splunk_realm=$REALM
 splunk_gateway_url=$SPLUNK_GATEWAY_URL
+splunk_collector_log_level = info
 EOF
 ########## End Setup Splunk_TA_otel_base ##########
 
@@ -64,7 +66,7 @@ disabled=false
 splunk_access_token=$ACCESSTOKEN
 splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/mysql-otel-for-ta.yaml
 
-splunk_collector_env_vars =
+splunk_collector_env_vars =MYSQL_USERNAME=$MYSQL_USER,MYSQL_PASSWORD=$MYSQL_PWD
 
 [monitor:///var/log/mysql/mysql.log]
 index = mysql
@@ -90,7 +92,7 @@ disabled=false
 splunk_access_token=$ACCESSTOKEN
 splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/mysql-gw-otel-for-ta.yaml
 
-splunk_collector_env_vars =
+splunk_collector_env_vars =MYSQL_USERNAME=$MYSQL_USER,MYSQL_PASSWORD=$MYSQL_PWD
 
 [monitor:///var/log/mysql/mysql.log]
 index = mysql
