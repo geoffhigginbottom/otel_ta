@@ -81,7 +81,30 @@ receivers:
       # Aggregated system process count metrics
       processes:
       # System processes metrics, disabled by default
-      # process:
+      process:
+        mute_process_all_errors: true
+        include:
+          names:
+            - splunkd.exe
+            - sqlservr.exe
+            - sqlagent.exe
+          match_type: strict
+        resource_attributes:
+          process.pid:
+            enabled: true
+          process.parent_pid:
+            enabled: true
+          process.command_line:
+            enabled: true
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.handles:
+            enabled: true
+          process.threads:
+            enabled: true
 
   jaeger:
     protocols:
@@ -132,7 +155,7 @@ receivers:
 
   sqlserver:
     collection_interval: 5s
-    username: ${SPLUNK_SQL_USER}
+    username: ${env:SPLUNK_SQL_USER}
     password: ${SPLUNK_SQL_USER_PWD}
     server: localhost
     port: 1433
