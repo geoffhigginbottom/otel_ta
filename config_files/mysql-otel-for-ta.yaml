@@ -28,7 +28,7 @@ extensions:
     egress:
       endpoint: "${SPLUNK_API_URL}"
       # Use instead when sending to gateway
-      #endpoint: "${SPLUNK_GATEWAY_URL}"
+      #endpoint: "http://${SPLUNK_GATEWAY_URL}"
   
   http_forwarder/opamp_splunk_o11y:
     ingress:
@@ -36,7 +36,7 @@ extensions:
     egress:
       endpoint: "${SPLUNK_INGEST_URL}"
       # Use instead when sending to gateway
-      #endpoint: "${SPLUNK_GATEWAY_URL}:4320"
+      #endpoint: "http://${SPLUNK_GATEWAY_URL}:4320"
   
   # opamp/splunk_o11y is included in the default config, but startup removes it
   # from service.extensions unless --feature-gates=+splunk.opamp.enabled is set.
@@ -48,7 +48,7 @@ extensions:
       http:
         endpoint: "${SPLUNK_INGEST_URL}/v1/opamp"
         # Use instead when sending to gateway (assuming the gateway is running http_forwarder/signalfx on port 4320)
-        #endpoint: "${SPLUNK_GATEWAY_URL}:4320/v1/opamp"
+        #endpoint: "http://${SPLUNK_GATEWAY_URL}:4320/v1/opamp"
         polling_interval: 30s
         headers:
           X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
