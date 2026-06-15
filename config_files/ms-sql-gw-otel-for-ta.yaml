@@ -4,8 +4,6 @@
 # environment variables are required to be manually defined or configured below:
 # - SPLUNK_ACCESS_TOKEN: The Splunk access token to authenticate requests
 # - SPLUNK_API_URL: The Splunk API URL, e.g. https://api.us0.observability.splunkcloud.com
-# - SPLUNK_BUNDLE_DIR: The path to the Smart Agent bundle, e.g. /usr/lib/splunk-otel-collector/agent-bundle
-# - SPLUNK_COLLECTD_DIR: The path to the collectd config directory for the Smart Agent, e.g. /usr/lib/splunk-otel-collector/agent-bundle/run/collectd
 # - SPLUNK_HEC_TOKEN: The Splunk HEC authentication token
 # - SPLUNK_HEC_URL: The Splunk HEC endpoint URL, e.g. https://http-inputs-acme.splunkcloud.com/services/collector
 # - SPLUNK_INGEST_URL: The Splunk ingest URL, e.g. https://ingest.us0.observability.splunkcloud.com
@@ -52,12 +50,7 @@ extensions:
         polling_interval: 30s
         headers:
           X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
-  
-  smartagent:
-    bundleDir: "${SPLUNK_BUNDLE_DIR}"
-    # collectd:
-      # configDir: "${SPLUNK_COLLECTD_DIR}"
-  
+
   zpages:
     endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
     expvar:
@@ -86,8 +79,6 @@ receivers:
         include:
           names:
             - splunkd.exe
-            - sqlservr.exe
-            - sqlagent.exe
           match_type: strict
         resource_attributes:
           process.pid:
@@ -163,24 +154,6 @@ receivers:
       sqlserver.instance.name:
         enabled: true
 
-  smartagent/sqlserver:
-    type: telegraf/sqlserver
-    host: localhost
-    port: 1433
-    userID: ${SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
-    appName: sqlserver
-    extraMetrics:
-      - sqlserver_memory_clerks.size_kb.bound_trees
-      - sqlserver_performance.active_temp_tables
-
-  smartagent/procstat-mssqlserver:
-    type: telegraf/procstat
-    intervalSeconds: 1
-    exe: sqlservr.exe
-    pattern: MSSQLSERVER
-    WinService: MSSQLSERVER
-
   windowsperfcounters/memory:
     metrics:
       bytes.committed:
@@ -217,9 +190,50 @@ receivers:
             attributes:
               state: idle
 
-  # smartagent/ntp:
-  #   type: ntp
-  #   host: pool.ntp.org
+  # Replaces smartagent/procstat (removed in 0.154.0). Uses PDH Process counters
+  # so sqlservr metrics work without elevated process-handle access.
+  windowsperfcounters/sqlservr:
+    collection_interval: 10s
+    metrics:
+      sqlserver.process.cpu.utilization:
+        description: CPU utilization for the sqlservr process
+        unit: "%"
+        gauge:
+      sqlserver.process.memory.working_set:
+        description: Working set memory for the sqlservr process
+        unit: By
+        gauge:
+      sqlserver.process.threads:
+        description: Thread count for the sqlservr process
+        unit: "{threads}"
+        gauge:
+      sqlserver.process.handles:
+        description: Handle count for the sqlservr process
+        unit: "{handles}"
+        gauge:
+    perfcounters:
+      - object: "Process"
+        instances: ["sqlservr"]
+        counters:
+          - name: "% Processor Time"
+            metric: sqlserver.process.cpu.utilization
+          - name: "Working Set"
+            metric: sqlserver.process.memory.working_set
+          - name: "Thread Count"
+            metric: sqlserver.process.threads
+          - name: "Handle Count"
+            metric: sqlserver.process.handles
+
+  windows_service:
+    collection_interval: 1m
+    include_services:
+      - MSSQLSERVER
+      - SQLSERVERAGENT
+
+  ntp:
+    endpoint: pool.ntp.org:123
+    collection_interval: 1h
+    initial_delay: 5m
 
 processors:
   batch:
@@ -336,7 +350,6 @@ service:
   - http_forwarder/opamp_splunk_o11y
   - opamp/splunk_o11y
   - zpages
-  - smartagent
 
   pipelines:
     traces:
@@ -363,11 +376,11 @@ service:
       - host_metrics
       - otlp
       - sqlserver
-      - smartagent/sqlserver
-      - smartagent/procstat-mssqlserver
-      # - smartagent/ntp
       - windowsperfcounters/memory
       - windowsperfcounters/processor
+      - windowsperfcounters/sqlservr
+      - windows_service
+      - ntp
 
       processors:
       - memory_limiter
