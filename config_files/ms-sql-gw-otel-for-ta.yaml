@@ -144,15 +144,22 @@ receivers:
 
   nop:
 
-  sqlserver:
-    collection_interval: 5s
-    username: ${env:SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
-    server: localhost
-    port: 1433
-    resource_attributes:
-      sqlserver.instance.name:
-        enabled: true
+sqlserver:
+  collection_interval: 10s
+  username: otel-user
+  password: otel-user-password
+  server: your-server-name
+  port: 1433
+  resource_attributes:
+    sqlserver.computer.name:
+      enabled: true
+    sqlserver.instance.name:
+      enabled: true
+  events:
+    db.server.query_sample:
+      enabled: true
+    db.server.top_query:
+      enabled: true
 
   windowsperfcounters/memory:
     metrics:
