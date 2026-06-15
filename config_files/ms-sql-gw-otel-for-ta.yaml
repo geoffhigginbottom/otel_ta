@@ -144,14 +144,31 @@ receivers:
 
   nop:
 
+  # sqlserver:
+  #   collection_interval: 10s
+  #   username: ${env:SPLUNK_SQL_USER}
+  #   password: ${SPLUNK_SQL_USER_PWD}
+  #   server: localhost
+  #   port: 1433
+  #   resource_attributes:
+  #     sqlserver.instance.name:
+  #       enabled: true
+
   sqlserver:
-    collection_interval: 5s
+    collection_interval: 10s
     username: ${env:SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
+    password: ${env:SPLUNK_SQL_USER_PWD}
     server: localhost
     port: 1433
     resource_attributes:
+      sqlserver.computer.name:
+        enabled: true
       sqlserver.instance.name:
+        enabled: true
+    events:
+      db.server.query_sample:
+        enabled: true
+      db.server.top_query:
         enabled: true
 
   windowsperfcounters/memory:
@@ -234,6 +251,58 @@ receivers:
     endpoint: pool.ntp.org:123
     collection_interval: 1h
     initial_delay: 5m
+
+  # Generates SQL workload (INSERT/UPDATE/DELETE/SELECT) and emits row-count metrics.
+  # Requires loadgen database and dbo.users table (created in ms_sql_gw_userdata.ps1.tpl).
+  sqlquery/loadgen:
+    driver: sqlserver
+    host: localhost
+    port: 1433
+    database: loadgen
+    username: ${env:SPLUNK_SQL_USER}
+    password: ${SPLUNK_SQL_USER_PWD}
+    collection_interval: 5s
+    queries:
+      - sql: >-
+          INSERT INTO dbo.users (username, email)
+          VALUES (
+            CONCAT('otel_', LEFT(REPLACE(CONVERT(varchar(36), NEWID()), '-', ''), 20)),
+            CONCAT(LEFT(REPLACE(CONVERT(varchar(36), NEWID()), '-', ''), 20), '@loadgen.local')
+          );
+          SELECT CAST(@@ROWCOUNT AS float) AS insert_count;
+        metrics:
+          - metric_name: sql.loadgen.insert.count
+            value_column: insert_count
+            value_type: double
+            description: Rows inserted by sqlquery loadgen receiver
+            unit: "{rows}"
+      - sql: >-
+          UPDATE TOP (5) dbo.users
+          SET email = CONCAT(email, '.u')
+          WHERE username LIKE 'otel_%';
+          SELECT CAST(@@ROWCOUNT AS float) AS update_count;
+        metrics:
+          - metric_name: sql.loadgen.update.count
+            value_column: update_count
+            value_type: double
+            description: Rows updated by sqlquery loadgen receiver
+            unit: "{rows}"
+      - sql: >-
+          DELETE TOP (5) FROM dbo.users WHERE username LIKE 'otel_%';
+          SELECT CAST(@@ROWCOUNT AS float) AS delete_count;
+        metrics:
+          - metric_name: sql.loadgen.delete.count
+            value_column: delete_count
+            value_type: double
+            description: Rows deleted by sqlquery loadgen receiver
+            unit: "{rows}"
+      - sql: SELECT COUNT_BIG(*) AS user_count FROM dbo.users WITH (NOLOCK)
+        metrics:
+          - metric_name: sql.loadgen.user.count
+            value_column: user_count
+            value_type: int
+            description: Current row count in loadgen users table
+            unit: "{rows}"
 
 processors:
   batch:
@@ -381,6 +450,7 @@ service:
       - windowsperfcounters/sqlservr
       - windows_service
       - ntp
+      - sqlquery/loadgen
 
       processors:
       - memory_limiter
