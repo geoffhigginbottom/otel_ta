@@ -22,6 +22,37 @@ PRIMARY_METRIC = (
     "CPU use",
 )
 
+PINNED_FILTERS = [
+    {
+        "applyIfExists": False,
+        "displayName": "Environment",
+        "fieldName": "deployment.environment",
+        "filterType": None,
+        "groupName": None,
+    },
+    {
+        "applyIfExists": False,
+        "displayName": "Host",
+        "fieldName": "host.name",
+        "filterType": None,
+        "groupName": None,
+    },
+    {
+        "applyIfExists": False,
+        "displayName": "Kernel release",
+        "fieldName": "host_kernel_release",
+        "filterType": None,
+        "groupName": None,
+    },
+    {
+        "applyIfExists": False,
+        "displayName": "CPU model",
+        "fieldName": "host_cpu_model",
+        "filterType": None,
+        "groupName": None,
+    },
+]
+
 
 def api_request(
     api_url: str,
@@ -145,7 +176,7 @@ def build_payload(
         "listColumns": list_columns(),
         "requiresFilter": False,
         "entityMetrics": entity_metrics(os_type),
-        "pinnedFilters": [],
+        "pinnedFilters": PINNED_FILTERS,
         "systemTypes": [],
         "tooltipKeyList": [
             {"property": "host.name", "displayName": "Host Name", "format": None},

@@ -21,6 +21,7 @@ Org navigators cannot set `visualizations` via the API (unlike built-in **Active
 - `defaultGroupBy: "none"`
 - One primary `entityMetrics` entry; the **CPU utilization** column uses property `value`
 - Entity properties for OS, memory size, and vCPU (`host_kernel_name`, `host_mem_total`, `host_logical_cpus`)
+- Pinned filters on the navigator bar: `deployment.environment`, `host.name`, `host_kernel_release`, `host_cpu_model`
 
 Reference payloads: `config_files/navigator_linux_hosts_otel.json` and `config_files/navigator_windows_hosts_otel.json`.
 

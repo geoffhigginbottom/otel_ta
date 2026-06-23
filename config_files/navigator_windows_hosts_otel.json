@@ -64,7 +64,36 @@
       "property": "host_logical_cpus"
     }
   ],
-  "pinnedFilters": [],
+  "pinnedFilters": [
+    {
+      "applyIfExists": false,
+      "displayName": "Environment",
+      "fieldName": "deployment.environment",
+      "filterType": null,
+      "groupName": null
+    },
+    {
+      "applyIfExists": false,
+      "displayName": "Host",
+      "fieldName": "host.name",
+      "filterType": null,
+      "groupName": null
+    },
+    {
+      "applyIfExists": false,
+      "displayName": "Kernel release",
+      "fieldName": "host_kernel_release",
+      "filterType": null,
+      "groupName": null
+    },
+    {
+      "applyIfExists": false,
+      "displayName": "CPU model",
+      "fieldName": "host_cpu_model",
+      "filterType": null,
+      "groupName": null
+    }
+  ],
   "propertyIdentifierTemplate": "{{host.name}}",
   "requiredProperties": ["host.name"],
   "requiresFilter": false,
