@@ -18,6 +18,9 @@ ms_sql_gw_count      = "0"
 # New for 3.0.0 - Allow insecure security group rules
 insecure_sg_rules    = true # Set to true to allow access from 0.0.0.0/0, false to restrict to your current public ip - leave as false unless absolutley necessary
 
+# Deploy Linux/Windows host navigator dashboards to Splunk O11y (uses api_admin_token above)
+o11y_navigators_enabled = true
+
 ### AWS Variables ###
 region = "2" # also need to change EIP setting below
 
@@ -38,7 +41,8 @@ aws_secret_access_key   = "XXXX"
 s3_bucket_name          = "XXXX"
 
 ### Splunk IM/APM Variables ###
-access_token                     = "XXXX"
+access_token                     = "XXXX"  # ingest token for OTel agents / collectors
+api_admin_token                  = "XXXX"  # admin API token for Terraform (dashboards, navigators)
 api_url                          = "https://api.eu0.signalfx.com"
 realm                            = "eu0"
 environment                      = "otel-ta-testing"

@@ -1,3 +1,7 @@
+locals {
+  splunk_api_admin_token = var.api_admin_token != "" ? var.api_admin_token : var.access_token
+}
+
 # AWS Auth Configuration
 provider "aws" {
   region     = lookup(var.aws_region, var.region)
@@ -12,7 +16,7 @@ provider "aws" {
 }
 
 provider "signalfx" {
-  auth_token = var.access_token
+  auth_token = local.splunk_api_admin_token
   api_url    = var.api_url
 }
 

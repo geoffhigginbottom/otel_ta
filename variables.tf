@@ -268,7 +268,14 @@
 
 ### SignalFX Variables ###
   variable "access_token" {
-    default = []
+    description = "Splunk Observability ingest token (OTel agents, collectors, TA)."
+    default     = []
+  }
+  variable "api_admin_token" {
+    description = "Splunk Observability admin API token for Terraform (dashboards, navigators). Uses access_token when empty."
+    type        = string
+    default     = ""
+    sensitive   = true
   }
   variable "api_url" {
     default = []

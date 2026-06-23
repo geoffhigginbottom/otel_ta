@@ -143,9 +143,12 @@ s3_bucket_name          = "XXXX"
 
 Settings used by Splunk IM/APM for authentication, notifications and APM Environment.  An example of an Environment value would be "tf-demo", it's a simple tag used to identify and link the various components within the Splunk APM UI. Collector Versions can be found [here](https://github.com/signalfx/splunk-otel-collector/releases).
 
+When `o11y_navigators_enabled` is true (default), Terraform also deploys Linux and Windows host dashboards for Infrastructure Monitoring. See [docs/O11Y_NAVIGATOR_TILES.md](docs/O11Y_NAVIGATOR_TILES.md).
+
 ```yaml
 ### Splunk IM/APM Variables ###
-access_token                     = "XXXX"
+access_token                     = "XXXX"  # ingest token for OTel agents
+api_admin_token                  = "XXXX"  # admin API token for Terraform
 api_url                          = "https://api.eu0.signalfx.com"
 realm                            = "eu0"
 environment                      = "otel-ta-testing"

@@ -1,14 +1,8 @@
 terraform {
   required_providers {
-    aws = {
-      source = "hashicorp/aws"
-    }
     signalfx = {
       source  = "splunk-terraform/signalfx"
       version = "~> 9.8"
-    }
-    splunk = {
-      source = "splunk/splunk"
     }
     null = {
       source = "hashicorp/null"

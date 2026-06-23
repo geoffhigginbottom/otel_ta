@@ -1,0 +1,86 @@
+{
+  "aggregateDashboards": ["REPLACE_AGGREGATE_DASHBOARD_ID"],
+  "alertQuery": "sf_metric:cpu.utilization AND os.type:windows",
+  "categories": [
+    {
+      "categoryGroupName": "Hosts",
+      "categoryInstanceLabel": null,
+      "categoryName": "Hosts overview"
+    }
+  ],
+  "defaultGroupBy": "none",
+  "displayName": "Active Windows hosts (OTel)",
+  "entityMetrics": [
+    {
+      "coloringScheme": {
+        "maxValue": 100,
+        "minValue": 0,
+        "palette": "GREEN_RED",
+        "thresholds": null
+      },
+      "description": "Color windows hosts based on CPU utilization",
+      "displayName": "CPU utilization",
+      "id": "otel_host_cpu",
+      "job": {
+        "filters": [],
+        "resolution": 60000,
+        "template": "CPU_UTILIZATION = data(\"cpu.utilization\", filter=filter('os.type', 'windows'){{#filter}} and {{{filter}}}{{/filter}}).mean(by=['host.name'])",
+        "varName": "CPU_UTILIZATION"
+      },
+      "metricSelectors": ["cpu.utilization"],
+      "type": "metric",
+      "valueFormat": "Percentage",
+      "valueLabel": "CPU use"
+    }
+  ],
+  "idDisplayName": "{{host.name}}",
+  "instanceDashboards": ["REPLACE_INSTANCE_DASHBOARD_ID"],
+  "instanceDisplayText": "Windows Host",
+  "instanceLabel": "Host",
+  "listColumns": [
+    {
+      "displayName": "Host",
+      "format": "id",
+      "property": "id"
+    },
+    {
+      "displayName": "CPU utilization",
+      "format": "Percentage",
+      "property": "value"
+    },
+    {
+      "displayName": "OS",
+      "format": null,
+      "property": "host_kernel_name"
+    },
+    {
+      "displayName": "Memory",
+      "format": "Kilobytes",
+      "property": "host_mem_total"
+    },
+    {
+      "displayName": "vCPU",
+      "format": null,
+      "property": "host_logical_cpus"
+    }
+  ],
+  "pinnedFilters": [],
+  "propertyIdentifierTemplate": "{{host.name}}",
+  "requiredProperties": ["host.name"],
+  "requiresFilter": false,
+  "summaryMetricLabel": "Active Windows Hosts",
+  "summaryMetricProgramText": "A = data('cpu.utilization', filter=filter('os.type', 'windows') and filter('host.name', '*')).mean(by=['host.name']).count().publish(label='A')",
+  "systemTypes": [],
+  "tooltipKeyList": [
+    {
+      "displayName": "Host Name",
+      "format": null,
+      "property": "host.name"
+    },
+    {
+      "displayName": "OS type",
+      "format": null,
+      "property": "os.type"
+    }
+  ]
+}

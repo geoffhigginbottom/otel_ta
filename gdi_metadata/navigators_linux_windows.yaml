@@ -1,0 +1,18 @@
+Navigators:
+  Active Linux hosts (OTel):
+    category_display_name: Hosts overview
+    associated_dashboards:
+      aggregated:
+        - Linux Hosts (OTel)
+      instance:
+        - Linux Host (OTel)
+    importQualifiers: cpu.utilization (host.name = *) & (os.type = linux);
+
+  Active Windows hosts (OTel):
+    category_display_name: Hosts overview
+    associated_dashboards:
+      aggregated:
+        - Windows Hosts (OTel)
+      instance:
+        - Windows Host (OTel)
+    importQualifiers: cpu.utilization (host.name = *) & (os.type = windows);
