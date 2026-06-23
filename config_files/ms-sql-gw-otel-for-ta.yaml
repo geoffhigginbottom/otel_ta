@@ -65,6 +65,9 @@ receivers:
       cpu:
       disk:
       filesystem:
+        exclude_mount_points:
+          mount_points: [""] # exclude empty mount points
+          match_type: strict
       memory:
       network:
       # System load average metrics https://en.wikipedia.org/wiki/Load_(computing)
@@ -75,18 +78,14 @@ receivers:
       processes:
       # System processes metrics, disabled by default
       process:
-        mute_process_all_errors: true
+        # mute_process_all_errors: true
+        mute_process_name_error: true
+        mute_process_user_error: true
+        mute_process_exe_error: true
         include:
           names:
             - splunkd.exe
           match_type: strict
-        resource_attributes:
-          process.pid:
-            enabled: true
-          process.parent_pid:
-            enabled: true
-          process.command_line:
-            enabled: true
         metrics:
           process.cpu.utilization:
             enabled: true
@@ -252,58 +251,6 @@ receivers:
     collection_interval: 1h
     initial_delay: 5m
 
-  # Generates SQL workload (INSERT/UPDATE/DELETE/SELECT) and emits row-count metrics.
-  # Requires loadgen database and dbo.users table (created in ms_sql_gw_userdata.ps1.tpl).
-  sqlquery/loadgen:
-    driver: sqlserver
-    host: localhost
-    port: 1433
-    database: loadgen
-    username: ${env:SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
-    collection_interval: 5s
-    queries:
-      - sql: >-
-          INSERT INTO dbo.users (username, email)
-          VALUES (
-            CONCAT('otel_', LEFT(REPLACE(CONVERT(varchar(36), NEWID()), '-', ''), 20)),
-            CONCAT(LEFT(REPLACE(CONVERT(varchar(36), NEWID()), '-', ''), 20), '@loadgen.local')
-          );
-          SELECT CAST(@@ROWCOUNT AS float) AS insert_count;
-        metrics:
-          - metric_name: sql.loadgen.insert.count
-            value_column: insert_count
-            value_type: double
-            description: Rows inserted by sqlquery loadgen receiver
-            unit: "{rows}"
-      - sql: >-
-          UPDATE TOP (5) dbo.users
-          SET email = CONCAT(email, '.u')
-          WHERE username LIKE 'otel_%';
-          SELECT CAST(@@ROWCOUNT AS float) AS update_count;
-        metrics:
-          - metric_name: sql.loadgen.update.count
-            value_column: update_count
-            value_type: double
-            description: Rows updated by sqlquery loadgen receiver
-            unit: "{rows}"
-      - sql: >-
-          DELETE TOP (5) FROM dbo.users WHERE username LIKE 'otel_%';
-          SELECT CAST(@@ROWCOUNT AS float) AS delete_count;
-        metrics:
-          - metric_name: sql.loadgen.delete.count
-            value_column: delete_count
-            value_type: double
-            description: Rows deleted by sqlquery loadgen receiver
-            unit: "{rows}"
-      - sql: SELECT COUNT_BIG(*) AS user_count FROM dbo.users WITH (NOLOCK)
-        metrics:
-          - metric_name: sql.loadgen.user.count
-            value_column: user_count
-            value_type: int
-            description: Current row count in loadgen users table
-            unit: "{rows}"
-
 processors:
   batch:
     metadata_keys:
@@ -356,7 +303,7 @@ exporters:
     ingest_url: http://${SPLUNK_GATEWAY_URL}:9943
     sync_host_metadata: true
     correlation:
-  
+
   # Entities (applicable only if discovery mode is enabled)
   otlp_http/entities:
     logs_endpoint: "${SPLUNK_INGEST_URL}/v3/event"
@@ -450,7 +397,6 @@ service:
       - windowsperfcounters/sqlservr
       - windows_service
       - ntp
-      - sqlquery/loadgen
 
       processors:
       - memory_limiter
