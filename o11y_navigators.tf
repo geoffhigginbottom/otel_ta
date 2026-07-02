@@ -8,8 +8,54 @@ module "o11y_host_navigators" {
   count  = var.o11y_navigators_enabled ? 1 : 0
   source = "./modules/o11y_host_navigators"
 
-  api_url         = var.api_url
-  api_admin_token = local.splunk_api_admin_token
+  environment = var.environment
+}
+
+resource "null_resource" "o11y_navigator" {
+  for_each = var.o11y_navigators_enabled ? module.o11y_host_navigators[0].navigator_deployments : {}
+
+  triggers = {
+    display_name           = each.value.display_name
+    os_type                = each.value.os_type
+    display_label          = each.value.display_label
+    aggregate_dashboard_id = each.value.aggregate_dashboard_id
+    instance_dashboard_id  = each.value.instance_dashboard_id
+    api_url                = var.api_url
+    api_admin_token        = local.splunk_api_admin_token
+    script_hash            = filemd5("${path.module}/scripts/o11y_navigator.py")
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+python3 "${path.module}/scripts/o11y_navigator.py" apply \
+  --api-url '${var.api_url}' \
+  --display-name '${each.value.display_name}' \
+  --os-type '${each.value.os_type}' \
+  --display-label '${each.value.display_label}' \
+  --aggregate-dashboard-id '${each.value.aggregate_dashboard_id}' \
+  --instance-dashboard-id '${each.value.instance_dashboard_id}'
+EOT
+
+    environment = {
+      SPLUNK_ACCESS_TOKEN = local.splunk_api_admin_token
+    }
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+
+    command = <<-EOT
+python3 "${path.module}/scripts/o11y_navigator.py" destroy \
+  --api-url '${self.triggers.api_url}' \
+  --display-name '${self.triggers.display_name}'
+EOT
+
+    environment = {
+      SPLUNK_ACCESS_TOKEN = self.triggers.api_admin_token
+    }
+  }
+
+  depends_on = [module.o11y_host_navigators]
 }
 
 output "o11y_linux_navigator_name" {

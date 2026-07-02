@@ -1,3 +1,17 @@
+output "navigator_deployments" {
+  description = "Per-OS settings for registering Infrastructure navigator tiles via API."
+  value = {
+    for os_key, cfg in local.os_configs :
+    os_key => {
+      display_name           = cfg.navigator_name
+      os_type                = cfg.os_type
+      display_label          = cfg.display_name
+      aggregate_dashboard_id = signalfx_dashboard.hosts[os_key].id
+      instance_dashboard_id  = signalfx_dashboard.host[os_key].id
+    }
+  }
+}
+
 output "linux_navigator_name" {
   description = "Navigator tile name on Infrastructure > Overview."
   value       = local.os_configs.linux.navigator_name
