@@ -6,9 +6,57 @@ ENVIRONMENT=$2
 ACCESSTOKEN=$3
 REALM=$4
 SPLUNK_GATEWAY_URL=$5
+SPLUNK_PRIVATE_IP=$6
+OTEL_COLLECTOR_MGMT_ENABLED=${7:-false}
+
+SPLUNK="/opt/splunk/bin/splunk"
+
+merge_opamp_env_vars() {
+  local file=$1
+  local endpoint=$2
+  local token=$3
+
+  [ -f "${file}" ] || return 0
+
+  if grep -q 'SPLUNK_ENT_OPAMP_ENDPOINT=' "${file}"; then
+    sed -i "s|SPLUNK_ENT_OPAMP_ENDPOINT=[^,]*|SPLUNK_ENT_OPAMP_ENDPOINT=${endpoint}|g" "${file}"
+    sed -i "s|SPLUNK_ENT_OPAMP_TOKEN=[^,]*|SPLUNK_ENT_OPAMP_TOKEN=${token}|g" "${file}"
+  elif grep -q '^splunk_collector_env_vars' "${file}"; then
+    sed -i "s|^splunk_collector_env_vars =\\(.*\\)|splunk_collector_env_vars =\\1,SPLUNK_ENT_OPAMP_ENDPOINT=${endpoint},SPLUNK_ENT_OPAMP_TOKEN=${token}|" "${file}"
+  else
+    sed -i "/^\\[Splunk_TA_otel:\\/\\/Splunk_TA_otel\\]/a splunk_collector_env_vars = SPLUNK_ENT_OPAMP_ENDPOINT=${endpoint},SPLUNK_ENT_OPAMP_TOKEN=${token}" "${file}"
+  fi
+}
+
+OTEL_APP_CONFIGS=(
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/configs/apache-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/configs/apache-gw-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/configs/mysql-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/configs/mysql-gw-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/configs/rocky-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/configs/ms-sql-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/configs/ms-sql-gw-otel-for-ta.yaml
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/configs/gateway_config.yaml
+)
+
+OTEL_APP_INPUTS=(
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_linux/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_apache_gw/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_mysql_gw/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_rocky/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_ms_sql_gw/local/inputs.conf
+  /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/inputs.conf
+)
+
+# Ensure forwarders can send data to this deployment server/indexer
+sudo -u splunk "$SPLUNK" enable listen 9997 -auth admin:$PASSWORD
 
 ########## Setup Splunk_TA_nix ##########
-/opt/splunk/bin/splunk add index osnixsec -auth admin:$PASSWORD
+sudo -u splunk "$SPLUNK" add index osnixsec -auth admin:$PASSWORD
 
 mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_nix/local/
 
@@ -32,6 +80,7 @@ interval = 30
 splunk_realm=$REALM
 splunk_gateway_url=$SPLUNK_GATEWAY_URL
 splunk_collector_log_level = info
+splunk_cmd_args = --feature-gates=+splunk.opamp.enabled
 EOF
 
 mkdir /opt/splunk/etc/deployment-apps/Splunk_TA_otel_base_windows/local/
@@ -43,6 +92,7 @@ interval = 30
 splunk_realm=$REALM
 splunk_gateway_url=$SPLUNK_GATEWAY_URL
 splunk_collector_log_level = info
+splunk_cmd_args = --feature-gates=+splunk.opamp.enabled
 EOF
 ########## End Setup Splunk_TA_otel_base ##########
 
@@ -54,6 +104,7 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_TA_otel_apps_gateway/local/i
 disabled=false
 splunk_access_token=$ACCESSTOKEN
 splunk_config=\$SPLUNK_HOME/etc/apps/\$SPLUNK_MODINPUT_APP_NAME/configs/gateway_config.yaml
+splunk_cmd_args = --feature-gates=+splunk.opamp.enabled
 EOF
 ########## End Setup Splunk_TA_otel_apps_gateway ##########
 
@@ -190,9 +241,9 @@ cat << EOF > /opt/splunk/etc/deployment-apps/Splunk_UF_logs_to_deployment_server
 defaultGroup = splunk_ent
 
 [tcpout:splunk_ent]
-server = 172.32.2.10:9997
+server = $SPLUNK_PRIVATE_IP:9997
 
-[tcpout-server://172.32.2.10:9997]
+[tcpout-server://$SPLUNK_PRIVATE_IP:9997]
 EOF
 ########## End Splunk_UF_logs_to_deployment_server ##########
 
@@ -361,4 +412,22 @@ whitelist.0 = *apache-gw*
 EOF
 
 chown splunk:splunk /opt/splunk/etc/system/local/serverclass.conf
-########## Setup Serverclasses ##########
+########## Setup Serverclasses ##########
+
+########## Splunk Enterprise OTel Collector management (OpAMP) ##########
+chmod +x /tmp/enable_splunk_ent_otel_management.sh /tmp/patch_otel_splunk_ent_opamp.sh
+
+if [ "${OTEL_COLLECTOR_MGMT_ENABLED}" = "true" ]; then
+  echo "Enabling Splunk Enterprise OTel Collector management..."
+  OTEL_MGMT_TOKEN=$(/tmp/enable_splunk_ent_otel_management.sh "${PASSWORD}")
+  OPAMP_ENDPOINT="https://${SPLUNK_PRIVATE_IP}:8089/services/tenant/agent-management/v2/opamp/otel"
+  /tmp/patch_otel_splunk_ent_opamp.sh true "${OTEL_APP_CONFIGS[@]}"
+  for inputs_file in "${OTEL_APP_INPUTS[@]}"; do
+    merge_opamp_env_vars "${inputs_file}" "${OPAMP_ENDPOINT}" "${OTEL_MGMT_TOKEN}"
+    chown splunk:splunk "${inputs_file}" 2>/dev/null || true
+  done
+else
+  echo "Splunk Enterprise OTel Collector management disabled; removing OpAMP extension from OTel configs."
+  /tmp/patch_otel_splunk_ent_opamp.sh false "${OTEL_APP_CONFIGS[@]}"
+fi
+########## End Splunk Enterprise OTel Collector management ##########

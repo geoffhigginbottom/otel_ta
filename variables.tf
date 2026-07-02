@@ -26,6 +26,12 @@
   variable "org" {
     default = []
   }
+  variable "le_certpath" {
+    default = "/opt/splunk/etc/auth/letsencrypt"
+  }
+  variable "letsencrypt_email" {
+    default = ""
+  }
   variable "insecure_sg_rules" {
     description = "Set to true to allow access from 0.0.0.0/0, false to restrict to my_public_ip."
     type        = bool
@@ -293,6 +299,11 @@
   }
   variable "splunk_private_ip" {
     default = []
+  }
+  variable "otel_collector_management_enabled" {
+    type        = bool
+    default     = false
+    description = "Enable Splunk Enterprise OTel Collector management (OpAMP) on deployment server and OTel TA configs."
   }
   variable "splunk_ent_filename" {
     default = {}

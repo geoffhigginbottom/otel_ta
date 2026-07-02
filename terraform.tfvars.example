@@ -19,7 +19,7 @@ ms_sql_gw_count      = "0"
 insecure_sg_rules    = true # Set to true to allow access from 0.0.0.0/0, false to restrict to your current public ip - leave as false unless absolutley necessary
 
 # Deploy Linux/Windows host navigator dashboards to Splunk O11y (uses api_admin_token above)
-o11y_navigators_enabled = true
+o11y_navigators_enabled = false
 
 ### AWS Variables ###
 region = "2" # also need to change EIP setting below
@@ -50,6 +50,8 @@ environment                      = "otel-ta-testing"
 ### Splunk Enterprise Variables ###
 splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
+# Register OTel collectors with Splunk Enterprise agent management (OpAMP on port 8089)
+otel_collector_management_enabled       = false
 gw_private_ip                           = "172.32.2.100"
 proxy_server_private_ip                 = "172.32.2.200"
 eip                                     = "nn.nn.nn.nn" #ensure this aligns with region setting above
@@ -68,13 +70,15 @@ splunk_ta_otel_filename                 = "Splunk_TA_otel-1.9.0.tgz"
 config_explorer_filename                = "config-explorer_1821.tgz"
 
 ### Certificate Vars ###
-certpath    = "/opt/splunk/etc/auth/sloccerts"
-passphrase  = "xxxxxxxx"
-fqdn        = "xxx.xxx.co.uk"
-country     = "GB"
-state       = "London"
-location    = "London"
-org         = "ACME"
+certpath           = "/opt/splunk/etc/auth/sloccerts"
+le_certpath        = "/opt/splunk/etc/auth/letsencrypt"
+passphrase         = "xxxxxxxx"
+fqdn               = "xxx.xxx.co.uk"
+letsencrypt_email  = "admin@xxx.xxx.co.uk"
+country            = "GB"
+state              = "London"
+location           = "London"
+org                = "ACME"
 
 ### MS SQL Server Variables ###
 ms_sql_user              = "signalfxagent"

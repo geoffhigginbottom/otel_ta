@@ -20,12 +20,6 @@ provider "signalfx" {
   api_url    = var.api_url
 }
 
-provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config"
-  }
-}
-
 module "vpc" {
   source                = "./modules/vpc"
   vpc_name              = var.environment
@@ -93,6 +87,7 @@ module "instances" {
 
   splunk_admin_pwd                      = var.splunk_admin_pwd
   splunk_private_ip                     = var.splunk_private_ip
+  otel_collector_management_enabled     = var.otel_collector_management_enabled
   splunk_ent_count                      = var.splunk_ent_count
   splunk_ent_version                    = var.splunk_ent_version
   splunk_ent_filename                   = var.splunk_ent_filename
@@ -117,6 +112,8 @@ module "instances" {
   state                                 = var.state
   location                              = var.location
   org                                   = var.org
+  le_certpath                           = var.le_certpath
+  letsencrypt_email                     = var.letsencrypt_email
 }
 
 

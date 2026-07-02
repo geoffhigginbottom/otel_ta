@@ -64,6 +64,8 @@ resource "aws_instance" "splunk_ent" {
 
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/install_splunk_enterprise.sh /tmp/install_splunk_enterprise.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/configure_splunk_deployment_server.sh /tmp/configure_splunk_deployment_server.sh",
+      "aws s3 cp s3://${var.s3_bucket_name}/scripts/enable_splunk_ent_otel_management.sh /tmp/enable_splunk_ent_otel_management.sh",
+      "aws s3 cp s3://${var.s3_bucket_name}/scripts/patch_otel_splunk_ent_opamp.sh /tmp/patch_otel_splunk_ent_opamp.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/certs.sh /tmp/certs.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_mysql_inputs.sh /tmp/update_mysql_inputs.sh",
       "aws s3 cp s3://${var.s3_bucket_name}/scripts/update_mysql_inputs_gw.sh /tmp/update_mysql_inputs_gw.sh",
@@ -77,7 +79,6 @@ resource "aws_instance" "splunk_ent" {
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/ms-sql-otel-for-ta.yaml /tmp/ms-sql-otel-for-ta.yaml",
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/ms-sql-gw-otel-for-ta.yaml /tmp/ms-sql-gw-otel-for-ta.yaml",
       "aws s3 cp s3://${var.s3_bucket_name}/config_files/gateway_config.yaml /tmp/gateway_config.yaml",
-      "aws s3 cp s3://${var.s3_bucket_name}/config_files/inputs.conf.spec /tmp/inputs.conf.spec",
 
       # "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_ent_filename} /tmp/${var.splunk_ent_filename}",
       "aws s3 cp s3://${var.s3_bucket_name}/non_public_files/${var.splunk_enterprise_license_filename} /tmp/${var.splunk_enterprise_license_filename}",
@@ -115,7 +116,7 @@ resource "aws_instance" "splunk_ent" {
 
     ## Install Splunk
       "sudo chmod +x /tmp/install_splunk_enterprise.sh",
-      "sudo /tmp/install_splunk_enterprise.sh $SPLUNK_PASSWORD $SPLUNK_ENT_VERSION $SPLUNK_FILENAME $LO_CONNECT_PASSWORD",
+      "sudo /tmp/install_splunk_enterprise.sh $SPLUNK_PASSWORD $SPLUNK_ENT_VERSION $SPLUNK_FILENAME $LO_CONNECT_PASSWORD $SPLUNK_ENTERPRISE_LICENSE_FILE",
 
     ## Add Apps
       "sudo tar -zxf /tmp/${var.splunk_enterprise_ta_linux_filename} --directory /opt/splunk/etc/deployment-apps",
@@ -174,7 +175,7 @@ resource "aws_instance" "splunk_ent" {
 
     ## Configure Apps
       "sudo chmod +x /tmp/configure_splunk_deployment_server.sh",
-      "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM $SPLUNK_GATEWAY_URL",
+      "sudo /tmp/configure_splunk_deployment_server.sh $SPLUNK_PASSWORD $ENVIRONMENT $TOKEN $REALM $SPLUNK_GATEWAY_URL ${var.splunk_private_ip} ${var.otel_collector_management_enabled}",
 
     ##### TESTING Update Config for MySQL Parameters TESTING #####
       "sudo chmod +x /tmp/update_mysql_inputs.sh",
@@ -184,26 +185,13 @@ resource "aws_instance" "splunk_ent" {
       "sudo /tmp/update_mysql_inputs.sh $MYSQL_USER $MYSQL_USER_PWD",
       "sudo /tmp/update_mysql_inputs_gw.sh $MYSQL_USER $MYSQL_USER_PWD",
 
-    ## install NFR license
-      "sudo mkdir /opt/splunk/etc/licenses/enterprise",
-      "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
-      "sudo /opt/splunk/bin/splunk restart",
+    # ## install NFR license  # No longer needed as license is applied via the install script
+    #   "sudo mkdir /opt/splunk/etc/licenses/enterprise",
+    #   "sudo cp /tmp/${var.splunk_enterprise_license_filename} /opt/splunk/etc/licenses/enterprise/${var.splunk_enterprise_license_filename}.lic",
+    #   "sudo /opt/splunk/bin/splunk restart",
 
-    ## Create Certs
-     # Create FQDN Ent Vars
-      "CERTPATH=${var.certpath}",
-      "PASSPHRASE=${var.passphrase}",
-      "FQDN=${var.fqdn}",
-      "COUNTRY=${var.country}",
-      "STATE=${var.state}",
-      "LOCATION=${var.location}",
-      "ORG=${var.org}",
-     # Run Script
+    ## Prep Certs Script (run after EIP association via splunk_cert_gen)
       "sudo chmod +x /tmp/certs.sh",
-      "sudo /tmp/certs.sh $CERTPATH $PASSPHRASE $FQDN $COUNTRY $STATE $LOCATION $ORG",
-    # Create copy in /tmp for easy access for setting up Log Observer Conect
-      "sudo cp /opt/splunk/etc/auth/sloccerts/mySplunkWebCert.pem /tmp/mySplunkWebCert.pem",
-      "sudo chown ubuntu:ubuntu /tmp/mySplunkWebCert.pem",
     ]
   }
 

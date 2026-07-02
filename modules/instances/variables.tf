@@ -20,6 +20,12 @@ variable "location" {
 variable "org" {
   default = []
 }
+variable "le_certpath" {
+  default = "/opt/splunk/etc/auth/letsencrypt"
+}
+variable "letsencrypt_email" {
+  default = ""
+}
 
 ### AWS Variables ###
 variable "region" {
@@ -179,6 +185,10 @@ variable "splunk_admin_pwd" {
 }
 variable "splunk_private_ip" {
   default = []
+}
+variable "otel_collector_management_enabled" {
+  type    = bool
+  default = false
 }
 variable "splunk_ent_version" {
   default = {}

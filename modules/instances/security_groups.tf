@@ -74,10 +74,18 @@ resource "aws_security_group" "splunk_ent_sg" {
     cidr_blocks = var.insecure_sg_rules ? ["0.0.0.0/0"] : ["${var.my_public_ip}/32"]
   }
 
-  ## Allow access to UI
+  ## Allow HTTP (port 80 must be open to the internet for Let's Encrypt ACME http-01 validation)
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ## Allow Splunk Web UI (HTTPS)
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
     protocol    = "tcp"
     cidr_blocks = var.insecure_sg_rules ? ["0.0.0.0/0"] : ["${var.my_public_ip}/32"]
   }
