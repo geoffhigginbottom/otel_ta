@@ -44,7 +44,6 @@ extensions:
         polling_interval: 30s
         headers:
           X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
-  
   zpages:
     endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
     expvar:
@@ -122,23 +121,32 @@ processors:
     check_interval: 2s
     limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}
 
-  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the traces
+  # Optional: The following processor can be used to add a default "deployment.environment.name" attribute to the traces
   # when it's not populated by instrumentation libraries.
   # If enabled, make sure to enable this processor in the pipeline below.
+  # To use the deprecated attribute, change the key to "deployment.environment".
   #resource/add_environment:
     #attributes:
       #- action: insert
         #value: staging/production/...
-        #key: deployment.environment
-
+        #key: deployment.environment.name
 
   # Detect if the collector is running on a cloud system. Overrides resource attributes set by receivers.
   # Detector order is important: the `system` detector goes last so it can't preclude cloud detectors from setting host/os info.
   # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#ordering
-  resourcedetection/internal:
+  resource_detection/internal:
     # detectors: [gcp, ecs, ec2, azure, system]
     detectors: [system]
     override: true
+
+  # Limit explicit histograms to at most 32 buckets before export through signalfx exporter.
+  # With `send_otlp_histograms: true`, the backend drops histograms above this limit.
+  # With `send_otlp_histograms: false`, this reduces the emitted `_bucket` series and `le` boundaries.
+  transform/limit_histogram_buckets:
+    metric_statements:
+      - context: datapoint
+        statements:
+          - merge_histogram_buckets(32, method="limit_buckets")
 
 exporters:
   # Traces
@@ -221,6 +229,10 @@ service:
       attributes:
         - name: otelcol.service.mode
           value: gateway
+        # Optional: Add a deployment environment to the Collector's internal telemetry.
+        # To use the deprecated attribute, change the key to "deployment.environment".
+        # - name: deployment.environment.name
+        #   value: staging/production/...
     metrics:
       readers:
         - pull:
@@ -250,6 +262,7 @@ service:
 
       processors:
       - memory_limiter
+      - transform/limit_histogram_buckets
       - batch
 
       exporters:
@@ -262,7 +275,7 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection/internal
+      - resource_detection/internal
 
       exporters:
       - signalfx/internal

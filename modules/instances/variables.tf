@@ -43,7 +43,7 @@ variable "public_subnet_ids" {
 variable "key_name" {
   default = []
 }
-variable "private_key_path"{
+variable "private_key_path" {
   default = []
 }
 variable "instance_type" {
@@ -88,8 +88,12 @@ variable "ec2_instance_profile_name" {
 variable "s3_bucket_name" {
   default = {}
 }
+variable "scripts_sync_id" {
+  type    = string
+  default = ""
+}
 variable "insecure_sg_rules" {
-  type    = bool
+  type = bool
 }
 
 ### Instance Count Variables ###
@@ -188,7 +192,7 @@ variable "splunk_private_ip" {
 }
 variable "otel_collector_management_enabled" {
   type    = bool
-  default = false
+  default = true
 }
 variable "splunk_ent_version" {
   default = {}

@@ -47,4 +47,6 @@ index.js
 
 .terraform.lock.hcl
 
+.generated/
+
 *.lic

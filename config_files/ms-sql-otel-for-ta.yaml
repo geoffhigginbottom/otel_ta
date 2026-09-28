@@ -4,8 +4,6 @@
 # environment variables are required to be manually defined or configured below:
 # - SPLUNK_ACCESS_TOKEN: The Splunk access token to authenticate requests
 # - SPLUNK_API_URL: The Splunk API URL, e.g. https://api.us0.observability.splunkcloud.com
-# - SPLUNK_BUNDLE_DIR: The path to the Smart Agent bundle, e.g. /usr/lib/splunk-otel-collector/agent-bundle
-# - SPLUNK_COLLECTD_DIR: The path to the collectd config directory for the Smart Agent, e.g. /usr/lib/splunk-otel-collector/agent-bundle/run/collectd
 # - SPLUNK_HEC_TOKEN: The Splunk HEC authentication token
 # - SPLUNK_HEC_URL: The Splunk HEC endpoint URL, e.g. https://http-inputs-acme.splunkcloud.com/services/collector
 # - SPLUNK_INGEST_URL: The Splunk ingest URL, e.g. https://ingest.us0.observability.splunkcloud.com
@@ -37,7 +35,10 @@ extensions:
       endpoint: "${SPLUNK_INGEST_URL}"
       # Use instead when sending to gateway
       #endpoint: "http://${SPLUNK_GATEWAY_URL}:4320"
-  
+      # Remove this header to use a token passed by the caller instead.
+      headers:
+        X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
+
   # opamp/splunk_o11y is included in the default config, but startup removes it
   # from service.extensions unless --feature-gates=+splunk.opamp.enabled is set.
   opamp/splunk_o11y:
@@ -52,12 +53,7 @@ extensions:
         polling_interval: 30s
         headers:
           X-SF-Token: "${SPLUNK_ACCESS_TOKEN}"
-  
-  smartagent:
-    bundleDir: "${SPLUNK_BUNDLE_DIR}"
-    # collectd:
-      # configDir: "${SPLUNK_COLLECTD_DIR}"
-  
+
   zpages:
     endpoint: "${SPLUNK_LISTEN_INTERFACE}:55679"
     expvar:
@@ -72,6 +68,9 @@ receivers:
       cpu:
       disk:
       filesystem:
+        exclude_mount_points:
+          mount_points: [""] # exclude empty mount points
+          match_type: strict
       memory:
       network:
       # System load average metrics https://en.wikipedia.org/wiki/Load_(computing)
@@ -81,7 +80,24 @@ receivers:
       # Aggregated system process count metrics
       processes:
       # System processes metrics, disabled by default
-      # process:
+      process:
+        # mute_process_all_errors: true
+        mute_process_name_error: true
+        mute_process_user_error: true
+        mute_process_exe_error: true
+        include:
+          names:
+            - splunkd.exe
+          match_type: strict
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.handles:
+            enabled: true
+          process.threads:
+            enabled: true
 
   jaeger:
     protocols:
@@ -131,32 +147,21 @@ receivers:
   nop:
 
   sqlserver:
-    collection_interval: 5s
-    username: ${SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
+    collection_interval: 10s
+    username: ${env:SPLUNK_SQL_USER}
+    password: ${env:SPLUNK_SQL_USER_PWD}
     server: localhost
     port: 1433
     resource_attributes:
+      sqlserver.computer.name:
+        enabled: true
       sqlserver.instance.name:
         enabled: true
-
-  smartagent/sqlserver:
-    type: telegraf/sqlserver
-    host: localhost
-    port: 1433
-    userID: ${SPLUNK_SQL_USER}
-    password: ${SPLUNK_SQL_USER_PWD}
-    appName: sqlserver
-    extraMetrics:
-      - sqlserver_memory_clerks.size_kb.bound_trees
-      - sqlserver_performance.active_temp_tables
-
-  smartagent/procstat-mssqlserver:
-    type: telegraf/procstat
-    intervalSeconds: 1
-    exe: sqlservr.exe
-    pattern: MSSQLSERVER
-    WinService: MSSQLSERVER
+    events:
+      db.server.query_sample:
+        enabled: true
+      db.server.top_query:
+        enabled: true
 
   windowsperfcounters/memory:
     metrics:
@@ -194,9 +199,50 @@ receivers:
             attributes:
               state: idle
 
-  # smartagent/ntp:
-  #   type: ntp
-  #   host: pool.ntp.org
+  # Replaces smartagent/procstat (removed in 0.154.0). Uses PDH Process counters
+  # so sqlservr metrics work without elevated process-handle access.
+  windowsperfcounters/sqlservr:
+    collection_interval: 10s
+    metrics:
+      sqlserver.process.cpu.utilization:
+        description: CPU utilization for the sqlservr process
+        unit: "%"
+        gauge:
+      sqlserver.process.memory.working_set:
+        description: Working set memory for the sqlservr process
+        unit: By
+        gauge:
+      sqlserver.process.threads:
+        description: Thread count for the sqlservr process
+        unit: "{threads}"
+        gauge:
+      sqlserver.process.handles:
+        description: Handle count for the sqlservr process
+        unit: "{handles}"
+        gauge:
+    perfcounters:
+      - object: "Process"
+        instances: ["sqlservr"]
+        counters:
+          - name: "% Processor Time"
+            metric: sqlserver.process.cpu.utilization
+          - name: "Working Set"
+            metric: sqlserver.process.memory.working_set
+          - name: "Thread Count"
+            metric: sqlserver.process.threads
+          - name: "Handle Count"
+            metric: sqlserver.process.handles
+
+  windows_service:
+    collection_interval: 1m
+    include_services:
+      - MSSQLSERVER
+      - SQLSERVERAGENT
+
+  ntp:
+    endpoint: pool.ntp.org:123
+    collection_interval: 1h
+    initial_delay: 5m
 
 processors:
   batch:
@@ -216,19 +262,29 @@ processors:
   # Resource detection processor is configured to override all host and cloud attributes because instrumentation
   # libraries can send wrong values from container environments.
   # https://docs.splunk.com/Observability/gdi/opentelemetry/components/resourcedetection-processor.html#ordering-considerations
-  resourcedetection:
+  resource_detection:
     detectors: [gcp, ecs, ec2, azure, system]
     override: true
 
-  # Optional: The following processor can be used to add a default "deployment.environment" attribute to the logs and
+  # Limit explicit histograms to at most 32 buckets before export through signalfx exporter.
+  # With `send_otlp_histograms: true`, the backend drops histograms above this limit.
+  # With `send_otlp_histograms: false`, this reduces the emitted `_bucket` series and `le` boundaries.
+  transform/limit_histogram_buckets:
+    metric_statements:
+      - context: datapoint
+        statements:
+          - merge_histogram_buckets(32, method="limit_buckets")
+
+  # Optional: The following processor can be used to add a default "deployment.environment.name" attribute to the logs and
   # traces when it's not populated by instrumentation libraries.
   # If enabled, make sure to enable this processor in a pipeline.
+  # To use the deprecated attribute, change the key to "deployment.environment".
   # For more information, see https://docs.splunk.com/Observability/gdi/opentelemetry/components/resource-processor.html
   #resource/add_environment:
     #attributes:
       #- action: insert
         #value: staging/production/...
-        #key: deployment.environment
+        #key: deployment.environment.name
 
 exporters:
   # Traces
@@ -297,6 +353,10 @@ service:
       attributes:
         - name: otelcol.service.mode
           value: agent
+        # Optional: Add a deployment environment to the Collector's internal telemetry.
+        # To use the deprecated attribute, change the key to "deployment.environment".
+        # - name: deployment.environment.name
+        #   value: staging/production/...
     metrics:
       readers:
         - pull:
@@ -312,7 +372,6 @@ service:
   - http_forwarder/opamp_splunk_o11y
   - opamp/splunk_o11y
   - zpages
-  - smartagent
 
   pipelines:
     traces:
@@ -324,35 +383,37 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection
+      - resource_detection
       #- resource/add_environment
 
       exporters:
       - otlp_http
-      - signalfx
       # Use instead when sending to gateway
-      #exporters: [otlp_grpc/gateway]
+      # exporters:
+      # - otlp_grpc/gateway
 
     metrics:
       receivers:
       - host_metrics
       - otlp
       - sqlserver
-      - smartagent/sqlserver
-      - smartagent/procstat-mssqlserver
-      # - smartagent/ntp
       - windowsperfcounters/memory
       - windowsperfcounters/processor
+      - windowsperfcounters/sqlservr
+      - windows_service
+      - ntp
 
       processors:
       - memory_limiter
+      - transform/limit_histogram_buckets
       - batch
-      - resourcedetection
+      - resource_detection
 
       exporters:
       - signalfx
       # Use instead when sending to gateway
-      #exporters: [otlp_grpc/gateway]
+      # exporters:
+      # - otlp_grpc/gateway
 
     metrics/internal:
       receivers:
@@ -361,7 +422,7 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection
+      - resource_detection
 
       # When sending to gateway, at least one metrics pipeline needs
       # to use signalfx exporter so host metadata gets emitted
@@ -375,7 +436,7 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection
+      - resource_detection
 
       exporters:
       - signalfx
@@ -388,12 +449,13 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection
+      - resource_detection
 
       exporters:
       - otlp_http/entities
       # Use instead when sending to gateway
-      #exporters: [otlp_grpc/gateway]
+      # exporters:
+      # - otlp_grpc/gateway
 
     logs:
       receivers:
@@ -403,11 +465,12 @@ service:
       processors:
       - memory_limiter
       - batch
-      - resourcedetection
+      - resource_detection
       #- resource/add_environment
 
       exporters:
       - splunk_hec
       - splunk_hec/profiling
       # Use instead when sending to gateway
-      #exporters: [otlp_grpc/gateway]
+      # exporters:
+      # - otlp_grpc/gateway

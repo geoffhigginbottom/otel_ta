@@ -53,6 +53,7 @@ module "instances" {
   insecure_sg_rules                     = var.insecure_sg_rules
   ec2_instance_profile_name             = module.s3.ec2_instance_profile_name
   s3_bucket_name                        = var.s3_bucket_name
+  scripts_sync_id                       = module.s3.scripts_sync_id
   instance_type                         = var.instance_type
   rocky_instance_type                   = var.rocky_instance_type
   mysql_instance_type                   = var.mysql_instance_type
@@ -170,4 +171,18 @@ output "splunk_url" {
 }
 output "splunk_url_fqdn" {
   value = var.instances_enabled ? module.instances.*.splunk_ent_url_fqdn : null
+}
+
+output "splunk_ent_opamp_token" {
+  value     = var.instances_enabled ? module.instances[0].splunk_ent_opamp_token : null
+  sensitive = true
+}
+
+output "splunk_ent_opamp_endpoint" {
+  value = var.instances_enabled ? module.instances[0].splunk_ent_opamp_endpoint : null
+}
+
+output "splunk_ent_opamp_credentials" {
+  value     = var.instances_enabled ? module.instances[0].splunk_ent_opamp_credentials : null
+  sensitive = true
 }

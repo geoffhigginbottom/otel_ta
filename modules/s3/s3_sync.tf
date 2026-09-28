@@ -18,6 +18,10 @@ resource "null_resource" "sync_scripts" {
   }
 }
 
+output "scripts_sync_id" {
+  value = null_resource.sync_scripts.id
+}
+
 resource "null_resource" "sync_non_pub_files" {
   provisioner "local-exec" {
     command = "aws s3 sync ./non_public_files/ s3://${var.s3_bucket_name}/non_public_files/ --delete"

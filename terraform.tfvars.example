@@ -50,8 +50,12 @@ environment                      = "otel-ta-testing"
 ### Splunk Enterprise Variables ###
 splunk_admin_pwd                        = "XXXX"
 splunk_private_ip                       = "172.32.2.10"
-# Register OTel collectors with Splunk Enterprise agent management (OpAMP on port 8089)
-otel_collector_management_enabled       = false
+# Register OTel collectors with Splunk Enterprise agent management (OpAMP on port 8089).
+# Creates server.conf [data_management], REST auth token (admin/general/+30d), patches all OTel YAML configs, and updates OTel TA inputs.
+# After apply: terraform output -raw splunk_ent_opamp_token
+# Manual update on deployment server: sudo /tmp/apply_splunk_ent_opamp_deployment_configs.sh enable <password> <private_ip> [8089] [token]
+# YAML uses ${SPLUNK_ENT_OPAMP_ENDPOINT} and ${SPLUNK_ENT_OPAMP_TOKEN}; values are set in inputs.conf only.
+otel_collector_management_enabled       = true
 gw_private_ip                           = "172.32.2.100"
 proxy_server_private_ip                 = "172.32.2.200"
 eip                                     = "nn.nn.nn.nn" #ensure this aligns with region setting above

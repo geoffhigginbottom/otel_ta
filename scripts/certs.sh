@@ -25,16 +25,45 @@ fi
 SPLUNK="/opt/splunk/bin/splunk"
 SPLUNK_USER_OPTS="--accept-license --answer-yes --no-prompt"
 
+if [ "$(id -u)" -ne 0 ]; then
+    echo "certs.sh must run as root (use sudo)." >&2
+    exit 1
+fi
+
+SYSTEMCTL=/usr/bin/systemctl
+
+splunk_systemd_unit() {
+    if [ -f /etc/systemd/system/Splunkd.service ] && grep -q '^\[Unit\]' /etc/systemd/system/Splunkd.service; then
+        echo "Splunkd"
+    elif [ -f /etc/systemd/system/splunk.service ] && grep -q '^\[Unit\]' /etc/systemd/system/splunk.service; then
+        echo "splunk"
+    fi
+}
+
+splunk_managed_by_systemd() {
+    [ -n "$(splunk_systemd_unit)" ]
+}
+
 fix_splunk_ownership() {
     /usr/bin/chown -R splunk:splunk /opt/splunk
     /usr/bin/find /opt/splunk/etc/system/local -type f -name '*.conf' -exec chmod 600 {} + 2>/dev/null || true
+    /usr/bin/find /opt/splunk/var/run -type f -exec chown splunk:splunk {} + 2>/dev/null || true
+}
+
+splunkd_running() {
+    pgrep -x splunkd >/dev/null 2>&1
+}
+
+port_bound() {
+    local port=$1
+    ss -tln 2>/dev/null | grep -q ":${port} "
 }
 
 remove_invalid_splunkd_unit() {
     if [ -f /etc/systemd/system/Splunkd.service ] && ! grep -q '^\[Unit\]' /etc/systemd/system/Splunkd.service; then
         echo "Removing invalid Splunkd.service unit file..."
         rm -f /etc/systemd/system/Splunkd.service
-        systemctl daemon-reload
+        "${SYSTEMCTL}" daemon-reload
     fi
 }
 
@@ -52,45 +81,166 @@ LimitDATA=16000000000
 LimitFSIZE=infinity
 TasksMax=8192
 EOF
-    systemctl daemon-reload
+    "${SYSTEMCTL}" daemon-reload
 }
 
 stop_splunk() {
     echo "Stopping Splunk..."
-    systemctl stop Splunkd 2>/dev/null || true
-    systemctl stop splunk 2>/dev/null || true
-    if [ -x /etc/init.d/splunk ]; then
-        /etc/init.d/splunk stop 2>/dev/null || true
-    fi
-    if sudo -u splunk "$SPLUNK" status 2>/dev/null | grep -qi 'splunkd is running'; then
-        sudo -u splunk "$SPLUNK" stop $SPLUNK_USER_OPTS || true
+    local unit
+    unit=$(splunk_systemd_unit || true)
+
+    if [ -n "${unit}" ]; then
+        "${SYSTEMCTL}" stop "${unit}" 2>/dev/null || true
+    else
+        sudo -u splunk "$SPLUNK" stop $SPLUNK_USER_OPTS 2>/dev/null || true
     fi
 
     for _ in $(seq 1 30); do
-        if ! ss -tln 2>/dev/null | grep -q ':80 '; then
-            return 0
-        fi
-        sleep 1
+        splunkd_running || break
+        sleep 2
     done
 
-    echo "Warning: port 80 still appears to be in use after stopping Splunk."
+    if splunkd_running; then
+        echo "Force-stopping remaining splunkd processes..."
+        pkill -x splunkd 2>/dev/null || true
+        sleep 2
+        if [ -n "${unit}" ]; then
+            "${SYSTEMCTL}" stop "${unit}" 2>/dev/null || true
+        fi
+    fi
+
+    fix_splunk_ownership
+
+    for port in 80 8000 8089; do
+        for _ in $(seq 1 30); do
+            port_bound "${port}" || break
+            sleep 1
+        done
+        if port_bound "${port}"; then
+            echo "Warning: port ${port} still appears to be in use after stopping Splunk."
+        fi
+    done
+}
+
+start_splunk_service() {
+    local unit
+    unit=$(splunk_systemd_unit || true)
+
+    remove_invalid_splunkd_unit
+    fix_splunk_ownership
+    ensure_splunk_limits_dropin
+    "${SYSTEMCTL}" daemon-reload
+    "${SYSTEMCTL}" reset-failed Splunkd splunk 2>/dev/null || true
+
+    if [ -n "${unit}" ]; then
+        echo "Starting Splunk via systemctl (${unit})..."
+        if ! "${SYSTEMCTL}" start "${unit}"; then
+            echo "systemctl start ${unit} failed:" >&2
+            "${SYSTEMCTL}" status "${unit}" --no-pager >&2 || true
+            return 1
+        fi
+    else
+        echo "Starting Splunk via splunk CLI (non-systemd)..."
+        sudo -u splunk "$SPLUNK" start $SPLUNK_USER_OPTS
+    fi
 }
 
 restart_splunk() {
     echo "Restarting Splunk to apply changes..."
+    local unit
+    unit=$(splunk_systemd_unit || true)
+
     remove_invalid_splunkd_unit
     fix_splunk_ownership
     ensure_splunk_limits_dropin
+    "${SYSTEMCTL}" daemon-reload
+    "${SYSTEMCTL}" reset-failed Splunkd splunk 2>/dev/null || true
 
-    if systemctl list-unit-files splunk.service 2>/dev/null | grep -q '^splunk.service'; then
-        systemctl restart splunk
-    elif grep -q '^\[Unit\]' /etc/systemd/system/Splunkd.service 2>/dev/null; then
-        systemctl restart Splunkd
-    elif [ -x /etc/init.d/splunk ]; then
-        /etc/init.d/splunk restart
+    if [ -n "${unit}" ]; then
+        echo "Restarting Splunk via systemctl (${unit})..."
+        if splunkd_running || port_bound 8089; then
+            if ! "${SYSTEMCTL}" restart "${unit}"; then
+                echo "systemctl restart ${unit} failed, trying start..." >&2
+                "${SYSTEMCTL}" start "${unit}" || return 1
+            fi
+        else
+            if ! "${SYSTEMCTL}" start "${unit}"; then
+                echo "systemctl start ${unit} failed:" >&2
+                "${SYSTEMCTL}" status "${unit}" --no-pager >&2 || true
+                return 1
+            fi
+        fi
     else
+        echo "Restarting Splunk via splunk CLI (non-systemd)..."
         sudo -u splunk "$SPLUNK" restart $SPLUNK_USER_OPTS
     fi
+
+    wait_splunk_ready
+}
+
+wait_splunk_ready() {
+    local password=""
+    if [ -f /tmp/splunk_password ]; then
+        password=$(tr -d '\n' < /tmp/splunk_password)
+    fi
+
+    echo "Waiting for Splunk (8089/8000) to become ready..."
+    for _ in $(seq 1 60); do
+        if port_bound 8089; then
+            if [ -n "${password}" ] && curl -skf -u "admin:${password}" https://localhost:8089/services/server/info >/dev/null 2>&1; then
+                if port_bound 8000; then
+                    echo "Splunk management API and web port are ready."
+                    return 0
+                fi
+            elif [ -z "${password}" ] && sudo -u splunk "$SPLUNK" status 2>/dev/null | grep -qi 'splunkd is running'; then
+                return 0
+            fi
+        fi
+        sleep 5
+    done
+
+    echo "ERROR: Splunk did not become ready after restart." >&2
+    "${SYSTEMCTL}" status Splunkd --no-pager 2>/dev/null || "${SYSTEMCTL}" status splunk --no-pager 2>/dev/null || true
+    sudo -u splunk "$SPLUNK" status 2>/dev/null || true
+    return 1
+}
+
+apply_server_ssl_config() {
+    if ! grep -q '^\[sslConfig\]' "/opt/splunk/etc/system/local/server.conf" 2>/dev/null; then
+        printf '\n[sslConfig]\n' >> "/opt/splunk/etc/system/local/server.conf"
+    fi
+
+    /usr/bin/sed -i '/serverCert =/d' "/opt/splunk/etc/system/local/server.conf"
+    /usr/bin/sed -i '/sslRootCAPath =/d' "/opt/splunk/etc/system/local/server.conf"
+    /usr/bin/sed -i '/sslPassword =/d' "/opt/splunk/etc/system/local/server.conf"
+    /usr/bin/sed -i "/\[sslConfig\]/a serverCert = $SLOC_CERTPATH/myFinalCert.pem\nsslRootCAPath = $SLOC_CERTPATH/myCABundle.pem\nenableSplunkdSSL = true" "/opt/splunk/etc/system/local/server.conf"
+    fix_splunk_ownership
+}
+
+should_enable_otel_collector_management() {
+    if [ -f /tmp/otel_collector_management_enabled ]; then
+        [ "$(tr -d '\n' < /tmp/otel_collector_management_enabled)" = "true" ]
+    else
+        return 0
+    fi
+}
+
+ensure_otel_collector_management_conf() {
+    local conf="/opt/splunk/etc/system/local/server.conf"
+    mkdir -p /opt/splunk/etc/system/local
+
+    if ! grep -q '^\[data_management\]' "${conf}" 2>/dev/null; then
+        printf '\n[data_management]\n' >> "${conf}"
+    fi
+
+    if grep -q '^otel_collector_management_enabled' "${conf}"; then
+        sed -i 's/^otel_collector_management_enabled.*/otel_collector_management_enabled = true/' "${conf}"
+    else
+        sed -i '/^\[data_management\]/a otel_collector_management_enabled = true' "${conf}"
+    fi
+
+    fix_splunk_ownership
+    echo "Enabled otel_collector_management_enabled in server.conf (requires restart)."
 }
 
 ## CREATE CERT CHAIN FOR SPLUNK LOG OBSERVER CONNECT / SPLUNK INTERCOMMUNICATIONS ##
@@ -149,15 +299,6 @@ echo "Creating myFinalCert.pem..."
 /usr/bin/chmod 600 "$SLOC_CERTPATH"/*.pem
 /usr/bin/chmod 600 "$SLOC_CERTPATH"/*.key
 
-# Cleanup old settings
-/usr/bin/sed -i '/serverCert =/d' "/opt/splunk/etc/system/local/server.conf"
-/usr/bin/sed -i '/sslRootCAPath =/d' "/opt/splunk/etc/system/local/server.conf"
-/usr/bin/sed -i '/sslPassword =/d' "/opt/splunk/etc/system/local/server.conf"
-
-# Add new settings. Note: sslPassword is omitted because the server key is unencrypted.
-/usr/bin/sed -i "/\[sslConfig\]/a serverCert = $SLOC_CERTPATH/myFinalCert.pem\nsslRootCAPath = $SLOC_CERTPATH/myCABundle.pem\nenableSplunkdSSL = true" "/opt/splunk/etc/system/local/server.conf"
-fix_splunk_ownership
-
 ## Create copy in /tmp for easy access for setting up Log Observer Connect
 cp "$SLOC_CERTPATH/mySplunkWebCert.pem" /tmp/mySplunkWebCert.pem
 chown ubuntu:ubuntu /tmp/mySplunkWebCert.pem
@@ -178,6 +319,7 @@ apt-get install -y certbot
 
 echo "Stopping Splunk to free port 80 for certbot standalone validation..."
 stop_splunk
+apply_server_ssl_config
 
 certbot certonly --standalone \
     --non-interactive \
@@ -257,4 +399,24 @@ fi
 echo "Splunk inputs.conf has been updated."
 
 fix_splunk_ownership
+
+if [ -f /tmp/splunk_password ]; then
+    SPLUNK_PASSWORD=$(tr -d '\n' < /tmp/splunk_password)
+    sudo -u splunk "$SPLUNK" enable web-ssl -auth "admin:${SPLUNK_PASSWORD}" || true
+    fix_splunk_ownership
+fi
+
+if should_enable_otel_collector_management; then
+    ensure_otel_collector_management_conf
+fi
+
 restart_splunk
+
+if should_enable_otel_collector_management \
+    && [ -f /tmp/splunk_password ] \
+    && [ -f /tmp/splunk_private_ip ]; then
+    SPLUNK_PASSWORD=$(tr -d '\n' < /tmp/splunk_password)
+    SPLUNK_PRIVATE_IP=$(tr -d '\n' < /tmp/splunk_private_ip)
+    chmod +x /tmp/finalize_otel_collector_management.sh /tmp/enable_splunk_ent_otel_management.sh
+    /tmp/finalize_otel_collector_management.sh "${SPLUNK_PASSWORD}" "${SPLUNK_PRIVATE_IP}"
+fi

@@ -302,7 +302,7 @@
   }
   variable "otel_collector_management_enabled" {
     type        = bool
-    default     = false
+    default     = true
     description = "Enable Splunk Enterprise OTel Collector management (OpAMP) on deployment server and OTel TA configs."
   }
   variable "splunk_ent_filename" {
